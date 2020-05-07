@@ -43,9 +43,11 @@ from learning to invert it back into raw data.
     - Evaluate privacy by measuring raw data/recreated data similarity
 
 ## Get started
-A conda environment has been provided (Pytorch-cpu only).
-Run `conda env create -f environment.yml` to create the environment,
-which is called `dpsnn`.
+A conda environment, `dpsnn`, has been provided (Pytorch-cpu only).
+Run `conda env create -f environment.yml` to create the environment
+using the latest packages,
+or `conda env create -f environment-lock.yml` to use fixed package versions
+(for reproducibility).
 
 
 ## License
