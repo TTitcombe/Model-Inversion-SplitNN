@@ -19,6 +19,3 @@ dependencies:
   - black
   - isort
   - tqdm
-#  - pip >= 19
-#  - pip:
-#    - future

@@ -130,3 +130,13 @@ dmypy.json
 
 # PyCharm
 .idea/
+
+# Ignore downloaded data
+data/*
+!data/.gitkeep
+
+# Ignore tensorboard data unless specified otherwise
+models/tb*
+
+# Ignore models for now
+models/*.pth

@@ -1,0 +1,191 @@
+"""Script for training a model with or without differential privacy"""
+import argparse
+from pathlib import Path
+from typing import Optional, Tuple
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torchvision.transforms as transforms
+from torch.utils.tensorboard import SummaryWriter
+from torchvision.datasets import MNIST
+from tqdm import tqdm
+
+from src import SplitNN
+
+
+def train_epoch(model, optimiser, criterion) -> Tuple[float, float, float]:
+    train_loss = 0.0
+
+    correct = 0
+    total = 0
+
+    model.train()
+    for batch_idx, (inputs, targets) in enumerate(train_loader):
+        inputs = inputs.to(device)
+        targets = targets.to(device)
+
+        optimiser.zero_grad()
+
+        outputs = model(inputs)
+        loss = criterion(outputs, targets)
+        loss.backward()
+        optimiser.step()
+
+        train_loss += loss.item()
+
+        _, predicted = outputs.max(1)
+        total += targets.size(0)
+        correct += predicted.eq(targets).sum().item()
+
+    # Evaluate on test data
+    correct_test = 0
+    total_test = 0
+
+    model.eval()
+    for test_inputs, test_targets in test_loader:
+        test_inputs = test_inputs.to(device)
+        test_targets = test_targets.to(device)
+
+        with torch.no_grad():
+            outputs = model(test_inputs)
+
+        _, predicted = outputs.max(1)
+        total_test += test_targets.size(0)
+        correct_test += predicted.eq(test_targets).sum().item()
+
+    return 100 * correct / total, 100 * correct_test / total_test, train_loss
+
+
+def train(
+    model: torch.nn.Module, n_epochs: int, learning_rate: float = 0.0001,
+) -> None:
+    # To track best model
+    best_accuracy = 0.0
+
+    writer = SummaryWriter(summary_writer_path)
+
+    criterion = nn.CrossEntropyLoss()
+
+    optimiser = optim.Adadelta(model.parameters(), lr=learning_rate)
+    scheduler = optim.lr_scheduler.StepLR(optimiser, step_size=1, gamma=0.7)
+
+    epoch_pbar = tqdm(total=n_epochs)
+
+    for epoch in range(n_epochs):
+        train_acc, test_acc, train_loss = train_epoch(model, optimiser, criterion)
+        scheduler.step()
+
+        # Update tensorboard
+        writer.add_scalars("Accuracy", {"train": train_acc, "test": test_acc}, epoch)
+        writer.add_scalar("Loss/train", train_loss, epoch)
+
+        # Save model if it's an improvement
+        if test_acc > best_accuracy:
+            best_accuracy = test_acc
+
+            state_dict = {
+                "model_state_dict": model.state_dict(),
+                "epoch": epoch,
+                "train_acc": train_acc,
+                "test_acc": test_acc,
+            }
+            torch.save(state_dict, MODEL_SAVE_PATH)
+
+        # Update prog bar text
+        epoch_pbar.set_description(
+            f"Train {train_acc: .2f}%; "
+            f"Test {test_acc : .2f}%; "
+            f"Best test {best_accuracy : .2f}%"
+        )
+        epoch_pbar.update(1)
+
+    epoch_pbar.close()
+    writer.close()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Train a SplitNN with differential privacy optionally applied to intermediate data"
+    )
+    parser.add_argument(
+        "--scale",
+        type=float,
+        required=True,
+        help="Scale of laplacian noise from which to draw. It 0.0, no noise is added. Required.",
+    )
+    parser.add_argument(
+        "--epochs",
+        default=5,
+        type=int,
+        help="Number of epochs to run for (default 5)",
+    )
+    parser.add_argument(
+        "--batch_size", default=128, type=int, help="Batch size (default 128)"
+    )
+    parser.add_argument(
+        "--learning_rate",
+        default=1,
+        type=float,
+        help="Starting learning rate. Decays every epoch by gamma (default 1)",
+    )
+    parser.add_argument(
+        "--saveas",
+        default="splitnn",
+        type=str,
+        help="Name of model to save as (default is 'splitnn')."
+        "Note that '_{noisescale}noise' will be appended to the end of the name",
+    )
+    parser.add_argument(
+        "--n_train_data",
+        default=60_000,
+        type=int,
+        help="Number of training points to use (default 60'000)",
+    )
+
+    args = parser.parse_args()
+    noise_scale = args.scale
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # File paths
+    project_root = Path(__file__).resolve().parent
+    data_dir = project_root / "data"
+    root_model_path = project_root / "models"
+
+    # Model name
+    model_name = args.saveas + f"_{noise_scale}noise".replace(".", "")
+    MODEL_SAVE_PATH = (root_model_path / model_name).with_suffix(".pth")
+
+    summary_writer_path = project_root / "models" / ("tb_" + model_name)
+
+    # ----- Model -----
+    model = SplitNN(args.scale)
+    model = model.to(device)
+    model.train()
+
+    # ----- Data -----
+    data_transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            # PyTorch examples; https://github.com/pytorch/examples/blob/master/mnist/main.py
+            transforms.Normalize((0.1307,), (0.3081,)),
+        ]
+    )
+    train_data = MNIST(data_dir, download=True, train=True, transform=data_transform)
+
+    # We only want to use a subset of the data to force overfitting
+    train_data.data = train_data.data[: args.n_train_data]
+    train_data.targets = train_data.targets[: args.n_train_data]
+
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size)
+
+    # Test data
+    test_data = MNIST(data_dir, download=True, train=False, transform=data_transform)
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=1024)
+
+    # Train
+    N_EPOCHS = args.epochs
+    print("Starting training...")
+
+    train(model, N_EPOCHS, learning_rate=args.learning_rate)

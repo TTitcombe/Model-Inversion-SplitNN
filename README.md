@@ -49,6 +49,10 @@ using the latest packages,
 or `conda env create -f environment-lock.yml` to use fixed package versions
 (for reproducibility).
 
+Run `train_model.py` to train a model with or without differential privacy.
+Alternatively,
+use an existing model saved in the `models/` directory.
+
 
 ## License
 Apache 2.0. See the full [license](LICENSE).
