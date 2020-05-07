@@ -1,0 +1,21 @@
+name: dpsnn
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  - python=3.7.*
+  - numpy >=1.16
+  - pytorch::pytorch-cpu
+  - pytorch::torchvision
+# plotting
+  - matplotlib >=3.1  # for basic plotting
+  - seaborn
+  - altair >=3  # for declarative plotting
+# notebooks
+  - jupyter  # for notebooks
+  - jupyterlab  # for notebooks IDE
+  - nodejs  # for jupyterlab build
+  - watermark  # for traceability in notebooks
+# utilities
+  - black
+  - isort
