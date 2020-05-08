@@ -14,7 +14,9 @@ from tqdm import tqdm
 from src import SplitNN
 
 
-def train_epoch(model, optimiser, criterion) -> Tuple[float, float, float]:
+def train_epoch(
+    model, optimiser, criterion, train_loader, device
+) -> Tuple[float, float]:
     train_loss = 0.0
 
     correct = 0
@@ -38,6 +40,10 @@ def train_epoch(model, optimiser, criterion) -> Tuple[float, float, float]:
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
 
+    return 100 * correct / total, train_loss
+
+
+def test(model, test_loader, device) -> float:
     # Evaluate on test data
     correct_test = 0
     total_test = 0
@@ -54,26 +60,111 @@ def train_epoch(model, optimiser, criterion) -> Tuple[float, float, float]:
         total_test += test_targets.size(0)
         correct_test += predicted.eq(test_targets).sum().item()
 
-    return 100 * correct / total, 100 * correct_test / total_test, train_loss
+    return 100 * correct_test / total_test
 
 
-def train(
-    model: torch.nn.Module, n_epochs: int, learning_rate: float = 0.0001,
-) -> None:
-    # To track best model
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Train a SplitNN with differential privacy optionally applied to intermediate data"
+    )
+    parser.add_argument(
+        "--scale",
+        type=float,
+        required=True,
+        help="Scale of laplacian noise from which to draw. It 0.0, no noise is added. Required.",
+    )
+    parser.add_argument(
+        "--epochs", default=5, type=int, help="Number of epochs to run for (default 5)",
+    )
+    parser.add_argument(
+        "--batch_size", default=128, type=int, help="Batch size (default 128)"
+    )
+    parser.add_argument(
+        "--learning_rate",
+        default=1,
+        type=float,
+        help="Starting learning rate. Decays every epoch by gamma (default 1)",
+    )
+    parser.add_argument(
+        "--gamma", default=0.7, type=float, help="Learning rate decay",
+    )
+    parser.add_argument(
+        "--saveas",
+        default="splitnn",
+        type=str,
+        help="Name of model to save as (default is 'splitnn')."
+        "Note that '_{noisescale}noise' will be appended to the end of the name",
+    )
+    parser.add_argument(
+        "--n_train_data",
+        default=60_000,
+        type=int,
+        help="Number of training points to use (default 60'000)",
+    )
+
+    args = parser.parse_args()
+    noise_scale = args.scale
+
+    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # File paths
+    project_root = Path(__file__).resolve().parent
+    data_dir = project_root / "data"
+    root_model_path = project_root / "models"
+
+    # Model name
+    model_name = args.saveas + f"_{noise_scale}noise".replace(".", "")
+    MODEL_SAVE_PATH = (root_model_path / model_name).with_suffix(".pth")
+
+    summary_writer_path = project_root / "models" / ("tb_" + model_name)
+
+    # ----- Model -----
+    model = SplitNN(args.scale)
+    model = model.to(DEVICE)
+    model.train()
+
+    # ----- Data -----
+    data_transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            # PyTorch examples; https://github.com/pytorch/examples/blob/master/mnist/main.py
+            transforms.Normalize((0.1307,), (0.3081,)),
+        ]
+    )
+    train_data = MNIST(data_dir, download=True, train=True, transform=data_transform)
+
+    # We only want to use a subset of the data to force overfitting
+    train_data.data = train_data.data[: args.n_train_data]
+    train_data.targets = train_data.targets[: args.n_train_data]
+
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size)
+
+    # Test data
+    test_data = MNIST(data_dir, download=True, train=False, transform=data_transform)
+    test_loader = torch.utils.data.DataLoader(test_data, batch_size=1024)
+
+    # ----- Train -----
+    n_epochs = args.epochs
+
     best_accuracy = 0.0
 
     writer = SummaryWriter(summary_writer_path)
 
     criterion = nn.CrossEntropyLoss()
 
-    optimiser = optim.Adadelta(model.parameters(), lr=learning_rate)
-    scheduler = optim.lr_scheduler.StepLR(optimiser, step_size=1, gamma=0.7)
+    optimiser = optim.Adadelta(model.parameters(), lr=args.learning_rate)
+    scheduler = optim.lr_scheduler.StepLR(optimiser, step_size=1, gamma=args.gamma)
 
     epoch_pbar = tqdm(total=n_epochs)
 
+    print("Starting training...")
     for epoch in range(n_epochs):
-        train_acc, test_acc, train_loss = train_epoch(model, optimiser, criterion)
+        train_acc, train_loss = train_epoch(
+            model, optimiser, criterion, train_loader, DEVICE
+        )
+        test_acc = test(model, test_loader, DEVICE)
+
+        # Update learning rate
         scheduler.step()
 
         # Update tensorboard
@@ -102,90 +193,3 @@ def train(
 
     epoch_pbar.close()
     writer.close()
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Train a SplitNN with differential privacy optionally applied to intermediate data"
-    )
-    parser.add_argument(
-        "--scale",
-        type=float,
-        required=True,
-        help="Scale of laplacian noise from which to draw. It 0.0, no noise is added. Required.",
-    )
-    parser.add_argument(
-        "--epochs",
-        default=5,
-        type=int,
-        help="Number of epochs to run for (default 5)",
-    )
-    parser.add_argument(
-        "--batch_size", default=128, type=int, help="Batch size (default 128)"
-    )
-    parser.add_argument(
-        "--learning_rate",
-        default=1,
-        type=float,
-        help="Starting learning rate. Decays every epoch by gamma (default 1)",
-    )
-    parser.add_argument(
-        "--saveas",
-        default="splitnn",
-        type=str,
-        help="Name of model to save as (default is 'splitnn')."
-        "Note that '_{noisescale}noise' will be appended to the end of the name",
-    )
-    parser.add_argument(
-        "--n_train_data",
-        default=60_000,
-        type=int,
-        help="Number of training points to use (default 60'000)",
-    )
-
-    args = parser.parse_args()
-    noise_scale = args.scale
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # File paths
-    project_root = Path(__file__).resolve().parent
-    data_dir = project_root / "data"
-    root_model_path = project_root / "models"
-
-    # Model name
-    model_name = args.saveas + f"_{noise_scale}noise".replace(".", "")
-    MODEL_SAVE_PATH = (root_model_path / model_name).with_suffix(".pth")
-
-    summary_writer_path = project_root / "models" / ("tb_" + model_name)
-
-    # ----- Model -----
-    model = SplitNN(args.scale)
-    model = model.to(device)
-    model.train()
-
-    # ----- Data -----
-    data_transform = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            # PyTorch examples; https://github.com/pytorch/examples/blob/master/mnist/main.py
-            transforms.Normalize((0.1307,), (0.3081,)),
-        ]
-    )
-    train_data = MNIST(data_dir, download=True, train=True, transform=data_transform)
-
-    # We only want to use a subset of the data to force overfitting
-    train_data.data = train_data.data[: args.n_train_data]
-    train_data.targets = train_data.targets[: args.n_train_data]
-
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size)
-
-    # Test data
-    test_data = MNIST(data_dir, download=True, train=False, transform=data_transform)
-    test_loader = torch.utils.data.DataLoader(test_data, batch_size=1024)
-
-    # Train
-    N_EPOCHS = args.epochs
-    print("Starting training...")
-
-    train(model, N_EPOCHS, learning_rate=args.learning_rate)
