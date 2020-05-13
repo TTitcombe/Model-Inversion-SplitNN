@@ -9,9 +9,9 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.datasets import MNIST
-from tqdm import tqdm
 
 from src import SplitNN
+from tqdm import tqdm
 
 
 def train_epoch(

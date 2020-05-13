@@ -1,11 +1,10 @@
-import matplotlib.pyplot as plt
 import torch
 from torchvision import transforms
 
+import matplotlib.pyplot as plt
 
-def plot_images(
-    tensors,
-):
+
+def plot_images(tensors,):
     """
     Plot normalised MNIST tensors as images
     """
