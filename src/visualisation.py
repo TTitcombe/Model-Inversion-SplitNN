@@ -1,18 +1,19 @@
+from typing import Optional
+
+import matplotlib.pyplot as plt
 import torch
 from torchvision import transforms
 
-import matplotlib.pyplot as plt
 
-
-def plot_images(tensors,):
+def plot_images(tensors, rows: Optional[int] = None, cols: Optional[int] = None):
     """
     Plot normalised MNIST tensors as images
     """
     fig = plt.figure(figsize=(20, 10))
 
     n_tensors = len(tensors)
-    n_cols = min(n_tensors, 4)
-    n_rows = int((n_tensors - 1) / 4) + 1
+    n_cols = cols if cols else min(n_tensors, 4)
+    n_rows = rows if rows else int((n_tensors - 1) / 4) + 1
 
     # De-normalise an MNIST tensor
     mu = torch.tensor([0.1307], dtype=torch.float32)

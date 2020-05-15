@@ -1,7 +1,7 @@
 """Script for training a model with or without differential privacy"""
 import argparse
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Tuple
 
 import torch
 import torch.nn as nn
