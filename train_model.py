@@ -11,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision.datasets import MNIST
 from tqdm import tqdm
 
-from src import SplitNN
+from src import SplitNN, NoPeekLoss
 
 
 def train_epoch(
@@ -29,8 +29,9 @@ def train_epoch(
 
         optimiser.zero_grad()
 
-        outputs = model(inputs)
-        loss = criterion(outputs, targets)
+        outputs, intermediates = model(inputs)
+
+        loss = criterion(inputs, intermediates, outputs, targets)
         loss.backward()
         optimiser.step()
 
@@ -54,7 +55,7 @@ def test(model, test_loader, device) -> float:
         test_targets = test_targets.to(device)
 
         with torch.no_grad():
-            outputs = model(test_inputs)
+            outputs, _ = model(test_inputs)
 
         _, predicted = outputs.max(1)
         total_test += test_targets.size(0)
@@ -71,7 +72,13 @@ if __name__ == "__main__":
         "--scale",
         type=float,
         required=True,
-        help="Scale of laplacian noise from which to draw. It 0.0, no noise is added. Required.",
+        help="Scale of laplacian noise from which to draw. If 0.0, no noise is added. Required.",
+    )
+    parser.add_argument(
+        "--nopeek",
+        type=float,
+        required=True,
+        help="Weighting of nopeek loss term. Required."
     )
     parser.add_argument(
         "--epochs", default=5, type=int, help="Number of epochs to run for (default 5)",
@@ -97,13 +104,14 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--n_train_data",
-        default=60_000,
+        default=10_000,
         type=int,
-        help="Number of training points to use (default 60'000)",
+        help="Number of training points to use (default 10'000)",
     )
 
     args = parser.parse_args()
     noise_scale = args.scale
+    nopeek_weighting = args.nopeek
 
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -113,12 +121,13 @@ if __name__ == "__main__":
     root_model_path = project_root / "models"
 
     # Model name
-    MODEL_SAVE_PATH = (root_model_path / args.saveas).with_suffix(".pth")
+    model_name = args.saveas + f"_{nopeek_weighting}nopeek".replace(".", "")
+    MODEL_SAVE_PATH = (root_model_path / model_name).with_suffix(".pth")
 
-    model_name = args.saveas + f"_{noise_scale}noise".replace(".", "")
-    NOISY_MODEL_SAVE_PATH = (root_model_path / model_name).with_suffix(".pth")
+    noisy_model_name = model_name + f"_{noise_scale}noise".replace(".", "")
+    NOISY_MODEL_SAVE_PATH = (root_model_path / noisy_model_name).with_suffix(".pth")
 
-    summary_writer_path = project_root / "models" / ("tb_" + model_name)
+    summary_writer_path = project_root / "models" / ("tb_" + noisy_model_name)
 
     # ----- Model -----
     model = SplitNN(0.0)
@@ -152,7 +161,7 @@ if __name__ == "__main__":
 
     writer = SummaryWriter(summary_writer_path)
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = NoPeekLoss(nopeek_weighting)
 
     if MODEL_SAVE_PATH.exists():
         # Load existing noiseless model
@@ -163,10 +172,11 @@ if __name__ == "__main__":
         optimiser = optim.Adadelta(model.parameters(), lr=args.learning_rate)
         scheduler = optim.lr_scheduler.StepLR(optimiser, step_size=1, gamma=args.gamma)
 
-        epoch_pbar = tqdm(total=n_epochs)
-
         # Train whole model without noise
         print("Starting training...")
+
+        epoch_pbar = tqdm(total=n_epochs)
+
         for epoch in range(n_epochs):
             train_acc, train_loss = train_epoch(
                 model, optimiser, criterion, train_loader, DEVICE
@@ -211,6 +221,8 @@ if __name__ == "__main__":
         param.requires_grad = False
 
     noisy_optimiser = optim.Adam(model.part2.parameters(), lr=1e-3)
+    noisy_criterion = NoPeekLoss(0.0)
+
     train_loader = torch.utils.data.DataLoader(
         train_data, batch_size=256
     )  # Large batch size to account for noise
@@ -219,10 +231,12 @@ if __name__ == "__main__":
     best_accuracy = 0.0
 
     print("Starting noisy training...")
+
     epoch_pbar = tqdm(total=n_epochs)
+
     for epoch in range(n_epochs):
         train_acc, train_loss = train_epoch(
-            model, noisy_optimiser, criterion, train_loader, DEVICE
+            model, noisy_optimiser, noisy_criterion, train_loader, DEVICE
         )
         test_acc = test(model, test_loader, DEVICE)
 

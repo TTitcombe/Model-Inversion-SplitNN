@@ -27,14 +27,14 @@ The idea is that the stochasticity of intermediate data can stop a model
 from learning to invert it back into raw data.
 
 ### Roadmap
-- [X] Proof of concept: show that the attack can be protected against
+- [x] Proof of concept: show that the attack can be protected against
     - Eyeball data being protected (i.e. no formal evaluation of privacy)
     - Brief analysis of privacy/accuracy trade-off
 - [ ] Explore limits
     - Impact on model size / architecture
     - Can it work with datasets more complex than MNIST
     - How many data points does the attacker need
-- [ ] Integrate NoPeekNN
+- [x] Integrate NoPeekNN
     - NoPeekNN cannot defend against the attack on its own,
     but it has an effect similar to introducing more layers into the SplitNN
     (recreations from the attack get worse)

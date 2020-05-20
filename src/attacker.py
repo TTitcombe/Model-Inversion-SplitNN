@@ -10,11 +10,9 @@ class AttackModel(torch.nn.Module):
         super().__init__()
 
         self.layers = torch.nn.Sequential(
-            torch.nn.Linear(9216, 5_000),
+            torch.nn.Linear(500, 1_000),
             torch.nn.ReLU(),
-            torch.nn.Linear(5_000, 5_000),
-            torch.nn.ReLU(),
-            torch.nn.Linear(5_000, 1_000),
+            torch.nn.Linear(1_000, 1_000),
             torch.nn.ReLU(),
             torch.nn.Linear(1_000, 784),
             torch.nn.ReLU(),
@@ -27,6 +25,8 @@ class AttackModel(torch.nn.Module):
 class ConvAttackModel(torch.nn.Module):
     def __init__(self):
         super().__init__()
+
+        self.linear1 = torch.nn.Linear(500, 9216)
 
         self.layers = torch.nn.Sequential(
             torch.nn.ConvTranspose2d(
@@ -64,6 +64,8 @@ class ConvAttackModel(torch.nn.Module):
         )
 
     def forward(self, x):
+        x = self.linear1(x)
+
         if len(x.size()) == 2:
             x = x.view(-1, 64, 12, 12)
 
