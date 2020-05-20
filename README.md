@@ -38,6 +38,8 @@ a model inversion attack.
 - [x] Proof of concept: show that the attack can be protected against
     - Eyeball data being protected (i.e. no formal evaluation of privacy)
     - Brief analysis of privacy/accuracy trade-off
+- [ ] Improve models
+    - Current models have large accuracy/privacy trade-off. Tune NoPeek and DP-SplitNN to improve performance
 - [ ] Explore limits
     - Impact on model size / architecture
     - Can it work with datasets more complex than MNIST
