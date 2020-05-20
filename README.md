@@ -20,11 +20,19 @@ as output from a trained model part is deterministic
 and therefore a decoder model can be trained.
 
 ### Aims
-This project aims to project SplitNNs
+This project aims to protect SplitNNs
 from black box model inversion attack
-by applying differential privacy to the data being transferred between model parts.
+by adding noise to the data being transferred between model parts.
 The idea is that the stochasticity of intermediate data can stop a model
 from learning to invert it back into raw data.
+Additionally,
+we combine the noise addition with NoPeekNN,
+in which the model learns to create an intermediate distribution
+as uncorrelated with the input data as possible.
+While NoPeekNN does not provide any guarantees on data leakage,
+unlike differential privacy,
+we aim to demonstrate that it can provide some protection against
+a model inversion attack.
 
 ### Roadmap
 - [x] Proof of concept: show that the attack can be protected against
@@ -54,6 +62,13 @@ Run `train_model.py --scale <noise_level>` to train a differentially private mod
 using noise drawn from Laplacian distribution with scale `<noise_level>`.
 Alternatively,
 use an existing model saved in the `models/` directory.
+
+## Notebooks
+We have provided relevant analysis in the [`notebooks/`](notebooks) folder.
+Be aware that notebooks marked `DEPRECATED` explored different methods for applying noise;
+after deciding to apply noise during a fine-tuning phase,
+these have been deprecated
+but kept to provide a log of research.
 
 
 ## License
