@@ -30,6 +30,10 @@ class SplitNN(torch.nn.Module):
     def noise(self):
         return self._noise.scale.item()
 
+    @noise.setter
+    def noise(self, noise_scale):
+        self._noise = torch.distributions.Laplace(0.0, noise_scale)
+
     def forward(self, x):
         return self.part2(self.encode(x))
 

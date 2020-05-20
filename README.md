@@ -13,7 +13,7 @@ turn intermediate data (data sent between model parts)
 back into raw input data.
 This attack is a particularly relevant for a computational server
 colluding with a data holder.
-Applying differential privacy to the model
+Applying differential privacy directly to the model
 (differentially private stochastic gradient descent - the Abadi method)
 does not defend against this attack
 as output from a trained model part is deterministic
@@ -27,7 +27,7 @@ The idea is that the stochasticity of intermediate data can stop a model
 from learning to invert it back into raw data.
 
 ### Roadmap
-- [ ] Proof of concept: show that the attack can be protected against
+- [X] Proof of concept: show that the attack can be protected against
     - Eyeball data being protected (i.e. no formal evaluation of privacy)
     - Brief analysis of privacy/accuracy trade-off
 - [ ] Explore limits
@@ -40,6 +40,7 @@ from learning to invert it back into raw data.
     (recreations from the attack get worse)
 - [ ] Formalise
     - Evaluate privacy parameters
+    - Bound intermediate data with tanh to get epsilon estimate?
     - Evaluate privacy by measuring raw data/recreated data similarity
 
 ## Get started
@@ -49,7 +50,8 @@ using the latest packages,
 or `conda env create -f environment-lock.yml` to use fixed package versions
 (for reproducibility).
 
-Run `train_model.py` to train a model with or without differential privacy.
+Run `train_model.py --scale <noise_level>` to train a differentially private model
+using noise drawn from Laplacian distribution with scale `<noise_level>`.
 Alternatively,
 use an existing model saved in the `models/` directory.
 

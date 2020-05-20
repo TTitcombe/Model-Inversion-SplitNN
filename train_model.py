@@ -113,13 +113,15 @@ if __name__ == "__main__":
     root_model_path = project_root / "models"
 
     # Model name
+    MODEL_SAVE_PATH = (root_model_path / args.saveas).with_suffix(".pth")
+
     model_name = args.saveas + f"_{noise_scale}noise".replace(".", "")
-    MODEL_SAVE_PATH = (root_model_path / model_name).with_suffix(".pth")
+    NOISY_MODEL_SAVE_PATH = (root_model_path / model_name).with_suffix(".pth")
 
     summary_writer_path = project_root / "models" / ("tb_" + model_name)
 
     # ----- Model -----
-    model = SplitNN(args.scale)
+    model = SplitNN(0.0)
     model = model.to(DEVICE)
     model.train()
 
@@ -152,20 +154,77 @@ if __name__ == "__main__":
 
     criterion = nn.CrossEntropyLoss()
 
-    optimiser = optim.Adadelta(model.parameters(), lr=args.learning_rate)
-    scheduler = optim.lr_scheduler.StepLR(optimiser, step_size=1, gamma=args.gamma)
+    if MODEL_SAVE_PATH.exists():
+        # Load existing noiseless model
+        checkpoint = torch.load(MODEL_SAVE_PATH)
+        model.load_state_dict(checkpoint["model_state_dict"])
+    else:
+        # Train the model
+        optimiser = optim.Adadelta(model.parameters(), lr=args.learning_rate)
+        scheduler = optim.lr_scheduler.StepLR(optimiser, step_size=1, gamma=args.gamma)
 
+        epoch_pbar = tqdm(total=n_epochs)
+
+        # Train whole model without noise
+        print("Starting training...")
+        for epoch in range(n_epochs):
+            train_acc, train_loss = train_epoch(
+                model, optimiser, criterion, train_loader, DEVICE
+            )
+            test_acc = test(model, test_loader, DEVICE)
+
+            # Update learning rate
+            scheduler.step()
+
+            # Update tensorboard
+            writer.add_scalars(
+                "Accuracy", {"train": train_acc, "test": test_acc}, epoch
+            )
+            writer.add_scalar("Loss/train", train_loss, epoch)
+
+            # Save model if it's an improvement
+            if test_acc > best_accuracy:
+                best_accuracy = test_acc
+
+                state_dict = {
+                    "model_state_dict": model.state_dict(),
+                    "epoch": epoch,
+                    "train_acc": train_acc,
+                    "test_acc": test_acc,
+                }
+                torch.save(state_dict, MODEL_SAVE_PATH)
+
+            # Update prog bar text
+            epoch_pbar.set_description(
+                f"Train {train_acc: .2f}%; "
+                f"Test {test_acc : .2f}%; "
+                f"Best test {best_accuracy : .2f}%"
+            )
+            epoch_pbar.update(1)
+
+        epoch_pbar.close()
+
+    # Train second half with noise
+    model.noise = args.scale
+
+    for param in model.part1.parameters():
+        param.requires_grad = False
+
+    noisy_optimiser = optim.Adam(model.part2.parameters(), lr=1e-3)
+    train_loader = torch.utils.data.DataLoader(
+        train_data, batch_size=256
+    )  # Large batch size to account for noise
+
+    # Reset 'best' accuracy to ensure we save a noisy model
+    best_accuracy = 0.0
+
+    print("Starting noisy training...")
     epoch_pbar = tqdm(total=n_epochs)
-
-    print("Starting training...")
     for epoch in range(n_epochs):
         train_acc, train_loss = train_epoch(
-            model, optimiser, criterion, train_loader, DEVICE
+            model, noisy_optimiser, criterion, train_loader, DEVICE
         )
         test_acc = test(model, test_loader, DEVICE)
-
-        # Update learning rate
-        scheduler.step()
 
         # Update tensorboard
         writer.add_scalars("Accuracy", {"train": train_acc, "test": test_acc}, epoch)
@@ -177,11 +236,11 @@ if __name__ == "__main__":
 
             state_dict = {
                 "model_state_dict": model.state_dict(),
-                "epoch": epoch,
+                "epoch": epoch + n_epochs,
                 "train_acc": train_acc,
                 "test_acc": test_acc,
             }
-            torch.save(state_dict, MODEL_SAVE_PATH)
+            torch.save(state_dict, NOISY_MODEL_SAVE_PATH)
 
         # Update prog bar text
         epoch_pbar.set_description(
@@ -192,4 +251,5 @@ if __name__ == "__main__":
         epoch_pbar.update(1)
 
     epoch_pbar.close()
+
     writer.close()
