@@ -35,6 +35,6 @@ class SplitNN(torch.nn.Module):
 
     def encode(self, x):
         out = self.part1(x)
-        out += self._noise.sample(out.size())
+        out += self._noise.sample(out.size()).to(out.device)
 
         return out
