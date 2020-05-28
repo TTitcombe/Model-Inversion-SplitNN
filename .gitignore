@@ -137,3 +137,5 @@ data/*
 
 # Ignore tensorboard data unless specified otherwise
 models/tb*
+
+*/lightning_logs/

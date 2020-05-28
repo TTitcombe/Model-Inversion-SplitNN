@@ -19,3 +19,6 @@ dependencies:
   - black
   - isort
   - tqdm
+  - pip >=19
+  - pip:
+      - pytorch_lightning >= 0.7.*
