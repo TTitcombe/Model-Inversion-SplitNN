@@ -1,7 +1,9 @@
 """
 Code relating to attack model
 """
+import pytorch_lightning as pl
 import torch
+from torch.utils.data import DataLoader
 
 
 # ----- Models -----
@@ -22,9 +24,11 @@ class AttackModel(torch.nn.Module):
         return self.layers(x)
 
 
-class ConvAttackModel(torch.nn.Module):
-    def __init__(self):
+class ConvAttackModel(pl.LightningModule):
+    def __init__(self, hparams):
         super().__init__()
+
+        self.hparams = hparams
 
         self.linear1 = torch.nn.Linear(500, 9216)
 
@@ -70,6 +74,71 @@ class ConvAttackModel(torch.nn.Module):
             x = x.view(-1, 64, 12, 12)
 
         return self.layers(x)
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+
+    def training_step(self, batch, batch_idx: int):
+        data, targets = batch
+
+        outputs = self(data)
+        targets = targets.view(outputs.size())
+
+        loss = ((outputs - targets) ** 2).mean()
+
+        output = {
+            "loss": loss,
+        }
+
+        return output
+
+    def validation_step(self, batch, batch_idx: int):
+        data, targets = batch
+
+        outputs = self(data)
+        targets = targets.view(outputs.size())
+
+        loss = ((outputs - targets) ** 2).mean()
+
+        return {
+            "val_loss": loss,
+        }
+
+    def validation_epoch_end(self, outs):
+        total_loss = 0.0
+
+        for out in outs:
+            total_loss += out["val_loss"]
+
+        avg_loss = total_loss.true_divide(len(outs))
+
+        results = {"val_loss": avg_loss}
+
+        return {"progress_bar": results, "log": results}
+
+    def test_step(self, batch, batch_idx):
+        data, targets = batch
+
+        outputs = self(data)
+        targets = targets.view(outputs.size())
+
+        loss = ((outputs - targets) ** 2).mean()
+
+        return {
+            "test_loss": loss,
+        }
+
+    def test_epoch_end(self, outs):
+        total_loss = 0.0
+
+        for out in outs:
+            total_loss += out["test_loss"]
+
+        avg_loss = total_loss.true_divide(len(outs))
+
+        results = {"test_loss": avg_loss}
+
+        return {"avg_test_loss": avg_loss, "log": results}
 
 
 # ----- Dataset -----
