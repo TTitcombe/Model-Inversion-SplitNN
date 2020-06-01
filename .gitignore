@@ -140,5 +140,6 @@ models/tb*
 # Ignore pytorch lightning models for now
 models/*.ckpt
 
+notebooks/*/data/
 lightning_logs/
 docs/
