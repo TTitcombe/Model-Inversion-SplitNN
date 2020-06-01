@@ -63,7 +63,9 @@ class SplitNN(pl.LightningModule):
 
         predictions, intermediates = self(data)
 
-        loss = NoPeekLoss(self.hparams.nopeek_weight)(data, intermediates, predictions, targets)
+        loss = NoPeekLoss(self.hparams.nopeek_weight)(
+            data, intermediates, predictions, targets
+        )
         correct = predictions.max(1)[1].eq(targets.flatten())
 
         output = {
@@ -80,7 +82,9 @@ class SplitNN(pl.LightningModule):
 
         predictions, intermediates = self(data)
 
-        loss = NoPeekLoss(self.hparams.nopeek_weight)(data, intermediates, predictions, targets)
+        loss = NoPeekLoss(self.hparams.nopeek_weight)(
+            data, intermediates, predictions, targets
+        )
         correct = predictions.max(1)[1].eq(targets.flatten())
 
         return {"val_loss": loss, "val_correct": correct}
@@ -106,13 +110,12 @@ class SplitNN(pl.LightningModule):
 
         predictions, intermediates = self(data)
 
-        loss = NoPeekLoss(self.hparams.nopeek_weight)(data, intermediates, predictions, targets)
+        loss = NoPeekLoss(self.hparams.nopeek_weight)(
+            data, intermediates, predictions, targets
+        )
         correct = predictions.max(1)[1].eq(targets.flatten())
 
-        return {
-            "test_loss": loss,
-            "test_correct": correct
-        }
+        return {"test_loss": loss, "test_correct": correct}
 
     def test_epoch_end(self, outs):
         preds = []
@@ -139,15 +142,21 @@ class SplitNN(pl.LightningModule):
             ]
         )
 
-        data_dir = Path.cwd().parent / "data"
-        self.train_data = MNIST(data_dir, download=True, train=True, transform=data_transform)
+        data_dir = Path.cwd() / "data"
+        self.train_data = MNIST(
+            data_dir, download=True, train=True, transform=data_transform
+        )
 
-        self.val_data = MNIST(data_dir, download=True, train=False, transform=data_transform)
+        self.val_data = MNIST(
+            data_dir, download=True, train=False, transform=data_transform
+        )
         self.val_data.data = self.val_data.data[:5000]
         self.val_data.targets = self.val_data.targets[:5000]
 
         # Test data
-        self.test_data = MNIST(data_dir, download=True, train=False, transform=data_transform)
+        self.test_data = MNIST(
+            data_dir, download=True, train=False, transform=data_transform
+        )
         self.test_data.data = self.test_data.data[5000:]
         self.test_data.targets = self.test_data.targets[5000:]
 

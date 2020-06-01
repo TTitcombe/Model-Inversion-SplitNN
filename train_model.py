@@ -8,8 +8,23 @@ from src import SplitNN
 
 
 def main(args):
-    trainer = pl.Trainer(max_epochs=args.max_epochs,
-                         gpus=args.gpus)
+    checkpoint_callback = pl.callbacks.ModelCheckpoint(
+        filepath=Path.cwd() / "models"
+        / (
+            f"{args.saveas}_{args.noise_scale}noise_{args.nopeek_weight}nopeek".replace(
+                ".", ""
+            )
+            + "_{epoch:02d}"
+        ),
+        monitor="val_accuracy",
+        mode="max",
+    )
+
+    trainer = pl.Trainer(
+        max_epochs=args.max_epochs,
+        gpus=args.gpus,
+        checkpoint_callback=checkpoint_callback,
+    )
     trainer.fit(model)
 
 
@@ -27,7 +42,7 @@ if __name__ == "__main__":
         "--nopeek_weight",
         type=float,
         required=True,
-        help="Weighting of nopeek loss term. Required."
+        help="Weighting of nopeek loss term. Required.",
     )
     parser.add_argument(
         "--batch_size", default=128, type=int, help="Batch size (default 128)"
@@ -55,12 +70,10 @@ if __name__ == "__main__":
         "--max_epochs",
         type=int,
         default=10,
-        help="Number of epoch to train for (default = 10)"
+        help="Number of epoch to train for (default = 10)",
     )
     parser.add_argument(
-        "--gpus",
-        default=None,
-        help="Number of gpus to use (default None)"
+        "--gpus", default=None, help="Number of gpus to use (default None)"
     )
 
     args = parser.parse_args()
