@@ -1,14 +1,24 @@
 """
 Neural networks
 """
+from pathlib import Path
+
+import pytorch_lightning as pl
 import torch
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
+from torchvision.datasets import MNIST
+
+from .nopeek_loss import NoPeekLoss
 
 
-class SplitNN(torch.nn.Module):
-    def __init__(self, noise_scale: float = 0.0) -> None:
+class SplitNN(pl.LightningModule):
+    def __init__(self, hparams) -> None:
         super().__init__()
 
-        self._noise = torch.distributions.Laplace(0.0, noise_scale)
+        self.hparams = hparams
+
+        self._noise = torch.distributions.Laplace(0.0, self.hparams.noise_scale)
 
         self.part1 = torch.nn.Sequential(
             torch.nn.Conv2d(1, 32, 3, 1),
@@ -28,14 +38,6 @@ class SplitNN(torch.nn.Module):
             torch.nn.Softmax(dim=1),
         )
 
-    @property
-    def noise(self):
-        return self._noise.scale.item()
-
-    @noise.setter
-    def noise(self, noise_scale):
-        self._noise = torch.distributions.Laplace(0.0, noise_scale)
-
     def forward(self, x):
         intermediate = self.part1(x)
         out = self.part2(
@@ -52,6 +54,111 @@ class SplitNN(torch.nn.Module):
 
     def decode(self, x):
         return self.part2(x)
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+
+    def training_step(self, batch, batch_idx: int):
+        data, targets = batch
+
+        predictions, intermediates = self(data)
+
+        loss = NoPeekLoss(self.hparams.nopeek_weight)(data, intermediates, predictions, targets)
+        correct = predictions.max(1)[1].eq(targets.flatten())
+
+        output = {
+            "loss": loss,
+            "progress_bar": {
+                "accuracy": 100 * correct.sum().true_divide(correct.size(0)),
+            },
+        }
+
+        return output
+
+    def validation_step(self, batch, batch_idx: int):
+        data, targets = batch
+
+        predictions, intermediates = self(data)
+
+        loss = NoPeekLoss(self.hparams.nopeek_weight)(data, intermediates, predictions, targets)
+        correct = predictions.max(1)[1].eq(targets.flatten())
+
+        return {"val_loss": loss, "val_correct": correct}
+
+    def validation_epoch_end(self, outs):
+        preds = []
+        total_loss = 0.0
+
+        for out in outs:
+            preds.append(out["val_correct"])
+            total_loss += out["val_loss"]
+
+        avg_loss = total_loss.true_divide(len(outs))
+        preds = torch.cat(preds)
+        acc = 100 * preds.sum().true_divide(preds.size(0))
+
+        results = {"val_loss": avg_loss, "val_accuracy": acc}
+
+        return {"progress_bar": results, "log": results}
+
+    def test_step(self, batch, batch_idx):
+        data, targets = batch
+
+        predictions, intermediates = self(data)
+
+        loss = NoPeekLoss(self.hparams.nopeek_weight)(data, intermediates, predictions, targets)
+        correct = predictions.max(1)[1].eq(targets.flatten())
+
+        return {
+            "test_loss": loss,
+            "test_correct": correct
+        }
+
+    def test_epoch_end(self, outs):
+        preds = []
+        total_loss = 0.0
+
+        for out in outs:
+            preds.append(out["test_correct"])
+            total_loss += out["test_loss"]
+
+        avg_loss = total_loss.true_divide(len(outs))
+        preds = torch.cat(preds)
+        acc = 100 * preds.sum().true_divide(preds.size(0))
+
+        results = {"test_loss": avg_loss, "test_acc": acc}
+
+        return {"avg_test_loss": avg_loss, "log": results}
+
+    def prepare_data(self):
+        data_transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                # PyTorch examples; https://github.com/pytorch/examples/blob/master/mnist/main.py
+                transforms.Normalize((0.1307,), (0.3081,)),
+            ]
+        )
+
+        data_dir = Path.cwd().parent / "data"
+        self.train_data = MNIST(data_dir, download=True, train=True, transform=data_transform)
+
+        self.val_data = MNIST(data_dir, download=True, train=False, transform=data_transform)
+        self.val_data.data = self.val_data.data[:5000]
+        self.val_data.targets = self.val_data.targets[:5000]
+
+        # Test data
+        self.test_data = MNIST(data_dir, download=True, train=False, transform=data_transform)
+        self.test_data.data = self.test_data.data[5000:]
+        self.test_data.targets = self.test_data.targets[5000:]
+
+    def train_dataloader(self):
+        return DataLoader(self.train_data, batch_size=self.hparams.batch_size)
+
+    def val_dataloader(self):
+        return DataLoader(self.val_data, batch_size=self.hparams.batch_size)
+
+    def test_dataloader(self):
+        return DataLoader(self.test_data, batch_size=self.hparams.batch_size)
 
 
 class ReLUSplitNN(SplitNN):

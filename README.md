@@ -60,8 +60,8 @@ using the latest packages,
 or `conda env create -f environment-lock.yml` to use fixed package versions
 (for reproducibility).
 
-Run `train_model.py --scale <noise_level>` to train a differentially private model
-using noise drawn from Laplacian distribution with scale `<noise_level>`.
+Run `train_model.py --noise_scale <noise_level> --nopeek_weight <weight>` to train a differentially private model
+using noise drawn from Laplacian distribution with scale `<noise_level>` and NoPeek loss weighted by `<weight>`.
 Alternatively,
 use an existing model saved in the `models/` directory.
 
