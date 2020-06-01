@@ -137,6 +137,8 @@ data/*
 
 # Ignore tensorboard data unless specified otherwise
 models/tb*
+# Ignore pytorch lightning models for now
+models/*.ckpt
 
 lightning_logs/
 docs/
