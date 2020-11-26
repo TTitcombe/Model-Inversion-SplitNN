@@ -91,6 +91,13 @@ We have provided relevant analysis in the [`notebooks/`](notebooks) folder.
 Be aware that previous exploratory notebooks were removed.
 Look over previous commits for a full history of experimentation.
 
+## Contributing
+
+Use `black` to format code
+and `isort` to format imports.
+Where possible,
+add type hints.
+
 ## License
 
 Apache 2.0. See the full [license](LICENSE).
