@@ -3,7 +3,9 @@
 Applying differential privacy to Split Neural networks (DPSNN).
 
 ## Summary
+
 ### Motivation
+
 Data input SplitNNs have been shown to be susceptible to,
 amongst other attacks,
 black box model inversion.
@@ -20,6 +22,7 @@ as output from a trained model part is deterministic
 and therefore a decoder model can be trained.
 
 ### Aims
+
 This project aims to protect SplitNNs
 from black box model inversion attack
 by adding noise to the data being transferred between model parts.
@@ -35,6 +38,7 @@ we aim to demonstrate that it can provide some protection against
 a model inversion attack.
 
 ### Roadmap
+
 - [x] Proof of concept: show that the attack can be protected against
     - Eyeball data being protected (i.e. no formal evaluation of privacy)
     - Brief analysis of privacy/accuracy trade-off
@@ -54,11 +58,27 @@ a model inversion attack.
     - Evaluate privacy by measuring raw data/recreated data similarity
 
 ## Get started
-A conda environment, `dpsnn`, has been provided (Pytorch-cpu only).
+
+### Requirements
+
+Python `3.6, 3.7, 3.8, 3.9`.
+
+A [conda environment](./environment.yml),
+`dpsnn`,
+has been provided with all packages required to run the experiments,
+including the local source code
+(Pytorch-cpu only - remove `cpuonly` to enable GPU computation).
 Run `conda env create -f environment.yml` to create the environment
 using the latest packages,
 or `conda env create -f environment-lock.yml` to use fixed package versions
 (for reproducibility).
+`conda activate dpsnn` to activate the environment.
+
+Alternatively,
+run `pip install -e .` to install the local source code only,
+`dpsnn`.
+
+### Run
 
 Run `train_model.py --noise_scale <noise_level> --nopeek_weight <weight>` to train a differentially private model
 using noise drawn from Laplacian distribution with scale `<noise_level>` and NoPeek loss weighted by `<weight>`.
@@ -66,12 +86,11 @@ Alternatively,
 use an existing model saved in the `models/` directory.
 
 ## Notebooks
-We have provided relevant analysis in the [`notebooks/`](notebooks) folder.
-Be aware that notebooks marked `DEPRECATED` explored different methods for applying noise;
-after deciding to apply noise during a fine-tuning phase,
-these have been deprecated
-but kept to provide a log of research.
 
+We have provided relevant analysis in the [`notebooks/`](notebooks) folder.
+Be aware that previous exploratory notebooks were removed.
+Look over previous commits for a full history of experimentation.
 
 ## License
+
 Apache 2.0. See the full [license](LICENSE).

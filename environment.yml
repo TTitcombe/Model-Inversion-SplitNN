@@ -9,16 +9,12 @@ dependencies:
   - torchvision
   - cpuonly
   - tensorboard
-  - matplotlib >=3.1  # for basic plotting
-# notebooks
-  - jupyter  # for notebooks
-  - jupyterlab  # for notebooks IDE
-  - nodejs  # for jupyterlab build
-  - watermark  # for traceability in notebooks
-# utilities
+  - matplotlib >=3.1
+  - jupyterlab
   - black
   - isort
   - tqdm
   - pip >=19
   - pip:
       - pytorch_lightning >= 0.7.*
+      - -e .
