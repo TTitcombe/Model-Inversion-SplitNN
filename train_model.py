@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytorch_lightning as pl
 
-from src import SplitNN
+from dpsnn import SplitNN
 
 
 def main(args):
