@@ -4,12 +4,13 @@ from pathlib import Path
 
 import pytorch_lightning as pl
 
-from src import SplitNN
+from dpsnn import SplitNN
 
 
 def main(args):
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        filepath=Path.cwd() / "models"
+        filepath=Path.cwd()
+        / "models"
         / (
             f"{args.saveas}_{args.noise_scale}noise_{args.nopeek_weight}nopeek".replace(
                 ".", ""
