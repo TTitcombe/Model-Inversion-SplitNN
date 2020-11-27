@@ -10,7 +10,7 @@ from dpsnn import SplitNN
 def main(args):
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         filepath=Path.cwd()
-        / "models"
+        / "models" / "classifiers"
         / (
             f"{args.saveas}_{args.noise_scale}noise_{args.nopeek_weight}nopeek".replace(
                 ".", ""
@@ -56,9 +56,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--saveas",
-        default="splitnn",
+        default="mnist",
         type=str,
-        help="Name of model to save as (default is 'splitnn')."
+        help="Name of model to save as (default is 'mnist')."
         "Note that '_{noisescale}noise' will be appended to the end of the name",
     )
     parser.add_argument(
