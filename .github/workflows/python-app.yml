@@ -35,4 +35,4 @@ jobs:
         black src --check
     - name: Check import formatting
       run: |
-        isort **/*.py -c -v
+        isort . -c -v
