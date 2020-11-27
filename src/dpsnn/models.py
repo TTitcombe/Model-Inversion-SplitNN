@@ -143,18 +143,21 @@ class SplitNN(pl.LightningModule):
         )
 
         data_dir = Path.cwd() / "data"
-        self.train_data = Subset(MNIST(
-            data_dir, download=True, train=True, transform=data_transform
-        ), range(40_000))
+        self.train_data = Subset(
+            MNIST(data_dir, download=True, train=True, transform=data_transform),
+            range(40_000),
+        )
 
-        self.val_data = Subset(MNIST(
-            data_dir, download=True, train=False, transform=data_transform
-        ), range(5000))
+        self.val_data = Subset(
+            MNIST(data_dir, download=True, train=False, transform=data_transform),
+            range(5000),
+        )
 
         # Test data
-        self.test_data = Subset(MNIST(
-            data_dir, download=True, train=False, transform=data_transform
-        ), range(5000, 10_000))
+        self.test_data = Subset(
+            MNIST(data_dir, download=True, train=False, transform=data_transform),
+            range(5000, 10_000),
+        )
 
     def train_dataloader(self):
         return DataLoader(self.train_data, batch_size=self.hparams.batch_size)

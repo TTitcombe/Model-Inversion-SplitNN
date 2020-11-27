@@ -44,19 +44,19 @@ def _load_model(root: Path, model_name: str) -> SplitNN:
     checkpoint = torch.load(model_path)
     hparams = checkpoint["hyper_parameters"]
 
-    return SplitNN(hparams).load_state_dict(checkpoint['model_state_dict'])
+    return SplitNN(hparams).load_state_dict(checkpoint["model_state_dict"])
 
 
 def _load_attack_training_dataset(root):
     transform = None  # TODO
     train = torch.utils.data.Subset(
         MNIST(root / "data", download=True, train=True, transform=transform),
-        range(40_000, 45_000)  # first 40_000 are used to train target model
+        range(40_000, 45_000),  # first 40_000 are used to train target model
     )
 
     val = torch.utils.data.Subset(
         MNIST(root / "data", download=True, train=True, transform=transform),
-        range(45_000, 50_000)
+        range(45_000, 50_000),
     )
 
     trainloader = torch.utils.data.DataLoader(train, batch_size=256)
@@ -67,23 +67,23 @@ def _load_attack_training_dataset(root):
 
     # Train data
     for data, _ in trainloader:
-            data = data
+        data = data
 
-            # Get target model output
-            with torch.no_grad():
-                _, intermediate_data = target_model(data)
+        # Get target model output
+        with torch.no_grad():
+            _, intermediate_data = target_model(data)
 
-            attack_train.push(intermediate_data, data)
+        attack_train.push(intermediate_data, data)
 
     # Validation data
     for data, _ in valloader:
-            data = data
+        data = data
 
-            # Get target model output
-            with torch.no_grad():
-                _, intermediate_data = target_model(data)
+        # Get target model output
+        with torch.no_grad():
+            _, intermediate_data = target_model(data)
 
-            attack_val.push(intermediate_data, data)
+        attack_val.push(intermediate_data, data)
 
     attack_trainloader = torch.utils.data.DataLoader(attack_train, batch_size=128)
     attack_valloader = torch.utils.data.DataLoader(attack_val, batch_size=128)
@@ -107,7 +107,7 @@ def main(root, args):
     attack_trainer = pl.Trainer(
         max_epochs=args.max_epochs,
         gpus=args.gpus,
-        #checkpoint_callback=checkpoint_callback,
+        # checkpoint_callback=checkpoint_callback,
     )
     attack_trainer.fit(attack_model, attack_trainloader, attack_valloader)
     attack_trainer.test(attack_model, test_dataloaders=attack_valloader)
@@ -121,7 +121,8 @@ if __name__ == "__main__":
         "--model",
         required=True,
         type=str,
-        help="Name of the model to attack. It is assumed that it is stored in models/classifiers"
+        help="Name of the model to attack. It is assumed that it is stored in models/classifiers",
+    )
     parser.add_argument(
         "--batch_size", default=128, type=int, help="Batch size (default 128)"
     )

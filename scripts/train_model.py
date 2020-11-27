@@ -10,7 +10,8 @@ from dpsnn import SplitNN
 def main(root, args):
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         filepath=root
-        / "models" / "classifiers"
+        / "models"
+        / "classifiers"
         / (
             f"{args.saveas}_{args.noise_scale}noise_{args.nopeek_weight}nopeek".replace(
                 ".", ""
