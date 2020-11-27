@@ -78,12 +78,13 @@ Alternatively,
 run `pip install -e .` to install the local source code only,
 `dpsnn`.
 
-### Run
+### Train models
 
-Run `train_model.py --noise_scale <noise_level> --nopeek_weight <weight>` to train a differentially private model
+Training scripts are in [`scripts`](./scripts).
+
+- `python scripts/train_model.py --noise_scale <noise_level> --nopeek_weight <weight>` to train a differentially private model
 using noise drawn from Laplacian distribution with scale `<noise_level>` and NoPeek loss weighted by `<weight>`.
-Alternatively,
-use an existing model saved in the `models/` directory.
+
 
 ## Notebooks
 
@@ -93,10 +94,11 @@ Look over previous commits for a full history of experimentation.
 
 ## Contributing
 
-Use `black` to format code
+- Use `black` to format code
 and `isort` to format imports.
 Where possible,
-add type hints.
+add type hints
+- Use `pytorch_lightning` to build PyTorch models that can scale
 
 ## License
 

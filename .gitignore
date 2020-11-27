@@ -131,14 +131,16 @@ dmypy.json
 # PyCharm
 .idea/
 
+### Project specific files
+
 # Ignore downloaded data
 data/*
 !data/.gitkeep
 
 # Ignore tensorboard data unless specified otherwise
-models/tb*
+models/**/tb*
 # Ignore pytorch lightning models for now
-models/*.ckpt
+models/**/*.ckpt
 
 notebooks/*/data/
 lightning_logs/

@@ -7,9 +7,9 @@ import pytorch_lightning as pl
 from dpsnn import SplitNN
 
 
-def main(args):
+def main(root, args):
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        filepath=Path.cwd()
+        filepath=root
         / "models" / "classifiers"
         / (
             f"{args.saveas}_{args.noise_scale}noise_{args.nopeek_weight}nopeek".replace(
@@ -80,10 +80,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # File paths
-    project_root = Path(__file__).resolve().parent
+    project_root = Path(__file__).resolve().parents[1]
 
     # ----- Model -----
     model = SplitNN(args)
 
     # ----- Train model -----
-    main(args)
+    main(project_root, args)
