@@ -6,7 +6,7 @@ from pathlib import Path
 import pytorch_lightning as pl
 import torch
 import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import MNIST
 
 from .nopeek_loss import NoPeekLoss
@@ -28,7 +28,7 @@ class SplitNN(pl.LightningModule):
             torch.nn.MaxPool2d(2),
             torch.nn.Flatten(),
             torch.nn.Linear(9216, 500),
-            torch.nn.Tanh(),
+            torch.nn.Tanh(),  # tanh to bound outputs, otherwise cannot be D.P.
         )
 
         self.part2 = torch.nn.Sequential(
@@ -143,22 +143,21 @@ class SplitNN(pl.LightningModule):
         )
 
         data_dir = Path.cwd() / "data"
-        self.train_data = MNIST(
-            data_dir, download=True, train=True, transform=data_transform
+        self.train_data = Subset(
+            MNIST(data_dir, download=True, train=True, transform=data_transform),
+            range(40_000),
         )
 
-        self.val_data = MNIST(
-            data_dir, download=True, train=False, transform=data_transform
+        self.val_data = Subset(
+            MNIST(data_dir, download=True, train=False, transform=data_transform),
+            range(5000),
         )
-        self.val_data.data = self.val_data.data[:5000]
-        self.val_data.targets = self.val_data.targets[:5000]
 
         # Test data
-        self.test_data = MNIST(
-            data_dir, download=True, train=False, transform=data_transform
+        self.test_data = Subset(
+            MNIST(data_dir, download=True, train=False, transform=data_transform),
+            range(5000, 10_000),
         )
-        self.test_data.data = self.test_data.data[5000:]
-        self.test_data.targets = self.test_data.targets[5000:]
 
     def train_dataloader(self):
         return DataLoader(self.train_data, batch_size=self.hparams.batch_size)
