@@ -42,7 +42,11 @@ def _load_model(root: Path, model_name: str) -> SplitNN:
     if not model_path.exists():
         raise ValueError(f"{model_path} does not exist")
 
-    return SplitNN.load_from_checkpoint(str(model_path))
+    model = SplitNN.load_from_checkpoint(str(model_path))
+    model.eval()
+    model.freeze()
+
+    return model
 
 
 def _load_attack_training_dataset(root):
