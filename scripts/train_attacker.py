@@ -5,6 +5,7 @@ from pathlib import Path
 import pytorch_lightning as pl
 import torch
 from torchvision.datasets import MNIST
+import torchvision.transforms as transforms
 
 from dpsnn import AttackDataset, AttackModel, ConvAttackModel, SplitNN
 
@@ -45,7 +46,14 @@ def _load_model(root: Path, model_name: str) -> SplitNN:
 
 
 def _load_attack_training_dataset(root):
-    transform = None  # TODO
+    transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            # PyTorch examples; https://github.com/pytorch/examples/blob/master/mnist/main.py
+            transforms.Normalize((0.1307,), (0.3081,)),
+        ]
+    )
+
     train = torch.utils.data.Subset(
         MNIST(root / "data", download=True, train=True, transform=transform),
         range(40_000, 45_000),  # first 40_000 are used to train target model
