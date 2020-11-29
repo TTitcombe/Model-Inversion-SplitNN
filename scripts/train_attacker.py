@@ -41,10 +41,7 @@ def _load_model(root: Path, model_name: str) -> SplitNN:
     if not model_path.exists():
         raise ValueError(f"{model_path} does not exist")
 
-    checkpoint = torch.load(model_path)
-    hparams = checkpoint["hyper_parameters"]
-
-    return SplitNN(hparams).load_state_dict(checkpoint["model_state_dict"])
+    return SplitNN.load_from_checkpoint(str(model_path))
 
 
 def _load_attack_training_dataset(root):
@@ -105,6 +102,7 @@ def main(root, args):
     )"""
 
     attack_trainer = pl.Trainer(
+        default_root_dir=root / "models" / "attackers",
         max_epochs=args.max_epochs,
         gpus=args.gpus,
         # checkpoint_callback=checkpoint_callback,
