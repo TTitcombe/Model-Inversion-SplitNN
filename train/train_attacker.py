@@ -105,7 +105,9 @@ def _load_attack_training_dataset(root):
 def _get_attacker_save_path(root: Path, args) -> str:
     model_name = args.model
     model_name = re.sub("_?epoch=[0-9]{2}", "", model_name)
-    return (root / "models" / "attackers" / f"{args.saveas}_model<{model_name}").with_suffix(".ckpt")
+    return (
+        root / "models" / "attackers" / f"{args.saveas}_model<{model_name}>"
+    ).with_suffix(".ckpt")
 
 
 def main(root, args):
