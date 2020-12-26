@@ -80,12 +80,12 @@ run `pip install -e .` to install the local source code only,
 
 ### Train models
 
-Training scripts are in [`scripts`](./scripts).
+Training scripts are in [`train`](./train).
 
-- `python scripts/train_model.py --noise_scale <noise_level> --nopeek_weight <weight>` to train a differentially private model
+- `python train/train_model.py --noise_scale <noise_level> --nopeek_weight <weight>` to train a differentially private model
 using noise drawn from Laplacian distribution with scale `<noise_level>` and NoPeek loss weighted by `<weight>`.
 
-- `python scripts/train_attacker.py --model <name>` to train an attacker on a trained model,
+- `python train/train_attacker.py --model <name>` to train an attacker on a trained model,
 `<name>`
 
 ## Notebooks

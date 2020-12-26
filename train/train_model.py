@@ -8,8 +8,8 @@ from dpsnn import SplitNN
 
 
 def main(root, args):
-    checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        filepath=root
+    savepath = (
+        root
         / "models"
         / "classifiers"
         / (
@@ -17,7 +17,12 @@ def main(root, args):
                 ".", ""
             )
             + "_{epoch:02d}"
-        ),
+        )
+    )
+    print(f"Saving model to {savepath}")
+
+    checkpoint_callback = pl.callbacks.ModelCheckpoint(
+        filepath=savepath,
         monitor="val_accuracy",
         mode="max",
     )
