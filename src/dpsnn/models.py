@@ -18,7 +18,7 @@ class SplitNN(pl.LightningModule):
 
         self.hparams = hparams
 
-        self._noise = torch.distributions.Laplace(0.0, self.hparams.noise_scale)
+        self.set_noise(self.hparams.noise_scale)
 
         self.part1 = torch.nn.Sequential(
             torch.nn.Conv2d(1, 32, 3, 1),
@@ -37,6 +37,9 @@ class SplitNN(pl.LightningModule):
             torch.nn.Linear(128, 10),
             torch.nn.Softmax(dim=1),
         )
+
+    def set_noise(self, noise: float) -> None:
+        self._noise = torch.distributions.Laplace(0.0, noise)
 
     def forward(self, x):
         intermediate = self.part1(x)
