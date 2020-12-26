@@ -137,10 +137,8 @@ dmypy.json
 data/*
 !data/.gitkeep
 
-# Ignore tensorboard data unless specified otherwise
-models/**/tb*
-# Ignore pytorch lightning models for now
-models/**/*.ckpt
+#models/**/tb*
+#models/**/*.ckpt
 
 notebooks/*/data/
 lightning_logs/
