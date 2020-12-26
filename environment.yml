@@ -16,5 +16,5 @@ dependencies:
   - tqdm
   - pip >=19
   - pip:
-      - pytorch_lightning >= 0.7.*
+      - pytorch_lightning = 0.9.*
       - -e .
