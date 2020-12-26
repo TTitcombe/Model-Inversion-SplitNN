@@ -1,9 +1,11 @@
 """Script for training an attacker on a trained model"""
 import argparse
+import re
 from pathlib import Path
 
 import pytorch_lightning as pl
 import torch
+import torchvision.transforms as transforms
 from torchvision.datasets import MNIST
 
 from dpsnn import AttackDataset, AttackModel, ConvAttackModel, SplitNN
@@ -44,11 +46,20 @@ def _load_model(root: Path, model_name: str) -> SplitNN:
     checkpoint = torch.load(model_path)
     hparams = checkpoint["hyper_parameters"]
 
-    return SplitNN(hparams).load_state_dict(checkpoint["model_state_dict"])
+    model = SplitNN(hparams)
+    model.load_state_dict(checkpoint["state_dict"])
+    return model
 
 
 def _load_attack_training_dataset(root):
-    transform = None  # TODO
+    transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            # PyTorch examples; https://github.com/pytorch/examples/blob/master/mnist/main.py
+            transforms.Normalize((0.1307,), (0.3081,)),
+        ]
+    )
+
     train = torch.utils.data.Subset(
         MNIST(root / "data", download=True, train=True, transform=transform),
         range(40_000, 45_000),  # first 40_000 are used to train target model
@@ -91,8 +102,16 @@ def _load_attack_training_dataset(root):
     return attack_trainloader, attack_valloader
 
 
+def _get_attacker_save_path(root: Path, args) -> str:
+    model_name = args.model
+    model_name = re.sub("_?epoch=[0-9]{2}", "", model_name)
+    return (root / "models" / "attackers" / f"{args.saveas}_model<{model_name}").with_suffix(".ckpt")
+
+
 def main(root, args):
     attack_trainloader, attack_valloader = _load_attack_training_dataset(root)
+
+    attacker_save_path = _get_attacker_save_path(root, args)
 
     """checkpoint_callback = pl.callbacks.ModelCheckpoint(
         filepath=root
@@ -111,6 +130,8 @@ def main(root, args):
     )
     attack_trainer.fit(attack_model, attack_trainloader, attack_valloader)
     attack_trainer.test(attack_model, test_dataloaders=attack_valloader)
+
+    torch.save(attack_model.state_dict(), attacker_save_path)
 
 
 if __name__ == "__main__":
