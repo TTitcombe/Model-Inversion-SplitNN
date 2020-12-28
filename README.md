@@ -1,6 +1,8 @@
 # Differentially-Private-SplitNN
 
 Applying differential privacy to Split Neural networks (DPSNN).
+Code for the paper
+[Working Title: Attack Landscape of Split Neural Networks](https://www.overleaf.com/project/5fe9a7e9dff0889b6fcb2714).
 
 ## Summary
 
@@ -61,32 +63,51 @@ a model inversion attack.
 
 ### Requirements
 
-Python `3.6, 3.7, 3.8, 3.9`.
+Developed in Python `3.8`,
+but similar minor versions should work.
+
+#### Environment
 
 A [conda environment](./environment.yml),
 `dpsnn`,
-has been provided with all packages required to run the experiments,
+has been provided
+with all packages required to run the experiments,
 including the local source code
 (Pytorch-cpu only - remove `cpuonly` to enable GPU computation).
-Run `conda env create -f environment.yml` to create the environment
-using the latest packages,
-or `conda env create -f environment-lock.yml` to use fixed package versions
+- Run `conda env create -f environment.yml` to create the environment
+using the latest packages OR
+- Run `conda env create -f environment-lock.yml` to use fixed package versions
 (for reproducibility).
-`conda activate dpsnn` to activate the environment.
+- `conda activate dpsnn` to activate the environment
 
-Alternatively,
-run `pip install -e .` to install the local source code only,
-`dpsnn`.
+### Build from source
+
+To install the local source code only:
+1. Clone this repo
+1. In a terminal, navigate to the repo
+1. Run `pip install -e .`.
+
+This installs the local package `dpsnn`.
 
 ### Train models
 
-Training scripts are in [`train`](./train).
+Scripts to train a classifier and attacker can be found in [`train`](./train):
 
 - `python train/train_model.py --noise_scale <noise_level> --nopeek_weight <weight>` to train a differentially private model
 using noise drawn from Laplacian distribution with scale `<noise_level>` and NoPeek loss weighted by `<weight>`.
 
 - `python train/train_attacker.py --model <name>` to train an attacker on a trained model,
 `<name>`
+
+### Run experiments
+
+To replicate all experiments present in the paper,
+run `./main.sh <arg>`,
+where `<arg>` is:
+
+- `noise` to train models with noise
+- `nopeek` to train models with NoPeek
+- `all` to run all experiments
 
 ## Notebooks
 
@@ -96,10 +117,9 @@ Look over previous commits for a full history of experimentation.
 
 ## Contributing
 
-- Use `black` to format code
-and `isort` to format imports.
-Where possible,
-add type hints
+- `black` to format code
+- `isort` to format imports
+- Add type hints
 - Use `pytorch_lightning` to build PyTorch models that can scale
 
 ## License
