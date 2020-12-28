@@ -5,7 +5,7 @@ import torch
 import torchvision
 
 
-def plot_images(tensors, rows: Optional[int] = None):
+def plot_images(tensors, rows: Optional[int] = None, savepath: Optional[str] = None):
     """
     Plot normalised MNIST tensors as images
     """
@@ -30,7 +30,9 @@ def plot_images(tensors, rows: Optional[int] = None):
         images.append(tensor)
 
     images = torch.cat(images)
-    print(images.size())
-    grid_image = torchvision.utils.make_grid(images, nrow=rows)
-    print(grid_image.size())
-    plt.imshow(grid_image.permute(1, 2, 0))
+    grid_image = torchvision.utils.make_grid(images, nrow=rows).permute(1, 2, 0)
+
+    if savepath:
+        plt.imsave(savepath, grid_image.detach().numpy())
+    else:
+        plt.imshow(grid_image)
