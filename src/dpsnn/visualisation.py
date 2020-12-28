@@ -16,7 +16,9 @@ def plot_images(tensors, rows: Optional[int] = None, savepath: Optional[str] = N
     # De-normalise an MNIST tensor
     mu = torch.tensor([0.1307], dtype=torch.float32)
     sigma = torch.tensor([0.3081], dtype=torch.float32)
-    Unnormalise = torchvision.transforms.Normalize((-mu / sigma).tolist(), (1.0 / sigma).tolist())
+    Unnormalise = torchvision.transforms.Normalize(
+        (-mu / sigma).tolist(), (1.0 / sigma).tolist()
+    )
 
     images = []
     for tensor in tensors:
