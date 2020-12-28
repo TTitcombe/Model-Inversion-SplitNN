@@ -43,11 +43,10 @@ def _load_model(root: Path, model_name: str) -> SplitNN:
     if not model_path.exists():
         raise ValueError(f"{model_path} does not exist")
 
-    checkpoint = torch.load(model_path)
-    hparams = checkpoint["hyper_parameters"]
+    model = SplitNN.load_from_checkpoint(str(model_path))
+    model.eval()
+    model.freeze()
 
-    model = SplitNN(hparams)
-    model.load_state_dict(checkpoint["state_dict"])
     return model
 
 
