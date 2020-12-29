@@ -2,6 +2,7 @@
 import argparse
 import re
 from pathlib import Path
+from typing import Optional
 
 import pytorch_lightning as pl
 import torch
@@ -11,7 +12,7 @@ from torchvision.datasets import MNIST
 from dpsnn import AttackDataset, AttackModel, ConvAttackModel, SplitNN
 
 
-def _load_model(root: Path, model_name: str) -> SplitNN:
+def _load_model(root: Path, model_name: str, noise: Optional[float] = None) -> SplitNN:
     """
     Load a SplitNN given a filename
 
@@ -43,11 +44,14 @@ def _load_model(root: Path, model_name: str) -> SplitNN:
     if not model_path.exists():
         raise ValueError(f"{model_path} does not exist")
 
-    checkpoint = torch.load(model_path)
-    hparams = checkpoint["hyper_parameters"]
+    model = SplitNN.load_from_checkpoint(str(model_path))
 
-    model = SplitNN(hparams)
-    model.load_state_dict(checkpoint["state_dict"])
+    if noise:
+        model.set_noise(noise)
+
+    model.eval()
+    model.freeze()
+
     return model
 
 
@@ -105,9 +109,14 @@ def _load_attack_training_dataset(root):
 def _get_attacker_save_path(root: Path, args) -> str:
     model_name = args.model
     model_name = re.sub("_?epoch=[0-9]{2}", "", model_name)
-    return (
-        root / "models" / "attackers" / f"{args.saveas}_model<{model_name}>"
-    ).with_suffix(".ckpt")
+    model_name = re.sub("\.ckpt", "", model_name)
+
+    attacker_name = f"{args.saveas}_model<{model_name}>"
+
+    if args.model_noise:
+        attacker_name += f"_set{args.model_noise}noise".replace(".", "")
+
+    return (root / "models" / "attackers" / attacker_name).with_suffix(".ckpt")
 
 
 def main(root, args):
@@ -147,6 +156,12 @@ if __name__ == "__main__":
         help="Name of the model to attack. It is assumed that it is stored in models/classifiers",
     )
     parser.add_argument(
+        "--model-noise",
+        type=float,
+        default=None,
+        help="If provided, set the model's noise level. Otherwise, do not change the model's noise from when it was trained (default = None)",
+    )
+    parser.add_argument(
         "--batch_size", default=128, type=int, help="Batch size (default 128)"
     )
     parser.add_argument(
@@ -184,7 +199,7 @@ if __name__ == "__main__":
     project_root = Path(__file__).resolve().parents[1]
 
     # ----- Models -----
-    target_model = _load_model(project_root, args.model)
+    target_model = _load_model(project_root, args.model, args.model_noise)
     attack_model = ConvAttackModel(args)
 
     # ----- Train model -----
