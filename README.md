@@ -91,12 +91,12 @@ This installs the local package `dpsnn`.
 
 ### Train models
 
-Scripts to train a classifier and attacker can be found in [`train`](./train):
+Scripts to train a classifier and attacker can be found in [`scripts`](./scripts):
 
-- `python train/train_model.py --noise_scale <noise_level> --nopeek_weight <weight>` to train a differentially private model
+- `python scripts/train_model.py --noise_scale <noise_level> --nopeek_weight <weight>` to train a differentially private model
 using noise drawn from Laplacian distribution with scale `<noise_level>` and NoPeek loss weighted by `<weight>`.
 
-- `python train/train_attacker.py --model <name>` to train an attacker on a trained model,
+- `python scripts/train_attacker.py --model <name>` to train an attacker on a trained model,
 `<name>`
 
 ### Run experiments
