@@ -19,3 +19,8 @@ if [ $1 = 'nopeek' ] || [ $1 = 'all' ]; then
         python scripts/train_model.py --noise_scale 0.0 --nopeek_weight $nopeek --batch_size 32
     done
 fi
+
+if [ $1 = 'performance' ] || [ $1 = 'all' ]; then
+    echo "Calculating model performances"
+    python scripts/evaluate_models.py
+fi

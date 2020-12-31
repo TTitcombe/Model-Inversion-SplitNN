@@ -107,6 +107,7 @@ where `<arg>` is:
 
 - `noise` to train models with noise
 - `nopeek` to train models with NoPeek
+- `performance` to calculate the accuracy and Distance Correlation of each model in `models/classifiers/`
 - `all` to run all experiments
 
 ## Notebooks
