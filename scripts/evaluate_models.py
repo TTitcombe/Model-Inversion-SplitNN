@@ -14,6 +14,7 @@ import torch
 from pytorch_lightning import metrics
 
 from dpsnn import DistanceCorrelationLoss, SplitNN
+from dpsnn.utils import load_classifier
 
 
 def _evaluate_model_accuracy(model):
@@ -65,14 +66,6 @@ def _evaluate_distance_correlation(model) -> Tuple[List, List]:
     )
 
 
-def _load_model(model_path: Path) -> SplitNN:
-    model = SplitNN.load_from_checkpoint((str(model_path)))
-    model.prepare_data()
-    model.freeze()
-
-    return model
-
-
 def _evaluate_models(models_path: Path, results_path: Path) -> None:
     results = pd.DataFrame(
         columns=[
@@ -92,7 +85,7 @@ def _evaluate_models(models_path: Path, results_path: Path) -> None:
         for model_path in models_path.glob("*.ckpt"):
             logging.info(f"Benchmarking {model_path.stem}")
 
-            model = _load_model(model_path)
+            model = load_classifier(model_path)
 
             train_acc, val_acc = _evaluate_model_accuracy(model)
             logging.info(

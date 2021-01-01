@@ -10,49 +10,7 @@ import torchvision.transforms as transforms
 from torchvision.datasets import MNIST
 
 from dpsnn import AttackDataset, AttackModel, ConvAttackModel, SplitNN
-
-
-def _load_model(root: Path, model_name: str, noise: Optional[float] = None) -> SplitNN:
-    """
-    Load a SplitNN given a filename
-
-    parameters
-    ----------
-    root : pathlib.Path
-        The project root
-    model_name : str
-        The name of the model to load.
-        Suffix ".ckpt" will be added if not present
-
-    Returns
-    -------
-    dpsnn.SplitNN
-        A trained SplitNN model
-
-    Raises
-    ------
-    ValueError
-        The model checkpoint file does not exist
-
-    Notes
-    -----
-    It is assumed that the model to load
-    is stored in root/models/classifiers/
-    """
-    model_path = (root / "models" / "classifiers" / model_name).with_suffix(".ckpt")
-
-    if not model_path.exists():
-        raise ValueError(f"{model_path} does not exist")
-
-    model = SplitNN.load_from_checkpoint(str(model_path))
-
-    if noise:
-        model.set_noise(noise)
-
-    model.eval()
-    model.freeze()
-
-    return model
+from dpsnn.utils import load_classifier
 
 
 def _load_attack_training_dataset(root):
@@ -199,7 +157,7 @@ if __name__ == "__main__":
     project_root = Path(__file__).resolve().parents[1]
 
     # ----- Models -----
-    target_model = _load_model(project_root, args.model, args.model_noise)
+    target_model = load(project_root / "models" / "classifiers" / args.model, args.model_noise)
     attack_model = ConvAttackModel(args)
 
     # ----- Train model -----
