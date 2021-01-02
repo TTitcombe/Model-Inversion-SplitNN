@@ -10,7 +10,7 @@ import torchvision.transforms as transforms
 from torchvision.datasets import MNIST
 
 from dpsnn import AttackDataset, AttackModel, ConvAttackModel, SplitNN
-from dpsnn.utils import load_classifier
+from dpsnn.utils import get_root_model_name, load_classifier
 
 
 def _load_attack_training_dataset(root):
@@ -66,8 +66,7 @@ def _load_attack_training_dataset(root):
 
 def _get_attacker_save_path(root: Path, args) -> str:
     model_name = args.model
-    model_name = re.sub("_?epoch=[0-9]{2}", "", model_name)
-    model_name = re.sub("\.ckpt", "", model_name)
+    model_name = get_root_model_name(model_name)
 
     attacker_name = f"{args.saveas}_model<{model_name}>"
 
@@ -157,7 +156,9 @@ if __name__ == "__main__":
     project_root = Path(__file__).resolve().parents[1]
 
     # ----- Models -----
-    target_model = load_classifier(project_root / "models" / "classifiers" / args.model, args.model_noise)
+    target_model = load_classifier(
+        project_root / "models" / "classifiers" / args.model, args.model_noise
+    )
     attack_model = ConvAttackModel(args)
 
     # ----- Train model -----

@@ -2,7 +2,7 @@
 from pathlib import Path
 from typing import Optional
 
-from .models import SplitNN
+from .models import ConvAttackModel, SplitNN
 
 
 def load_classifier(model_path: Path, noise: Optional[float] = None) -> SplitNN:
@@ -34,3 +34,16 @@ def load_classifier(model_path: Path, noise: Optional[float] = None) -> SplitNN:
     model.freeze()
 
     return model
+
+
+def load_attacker(attacker_path: Path) -> ConvAttackModel:
+    attack_model = ConvAttackModel({})
+    attack_model.load_state_dict(torch.load(attacker_path))
+    attack_model.eval()
+
+    return attack_model
+
+
+def get_root_model_name(model_name: str) -> str:
+    model_name = re.sub("_?epoch=[0-9]{2}", "", model_name)
+    return re.sub("\.ckpt", "", model_name)
