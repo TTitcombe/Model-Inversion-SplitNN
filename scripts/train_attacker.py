@@ -157,7 +157,7 @@ if __name__ == "__main__":
     project_root = Path(__file__).resolve().parents[1]
 
     # ----- Models -----
-    target_model = load(project_root / "models" / "classifiers" / args.model, args.model_noise)
+    target_model = load_classifier(project_root / "models" / "classifiers" / args.model, args.model_noise)
     attack_model = ConvAttackModel(args)
 
     # ----- Train model -----
