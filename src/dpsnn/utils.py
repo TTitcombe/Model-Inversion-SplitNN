@@ -3,6 +3,8 @@ import re
 from pathlib import Path
 from typing import Optional
 
+import torch
+
 from .attacker import ConvAttackModel
 from .models import SplitNN
 
