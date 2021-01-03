@@ -1,4 +1,5 @@
 """Utility code"""
+import re
 from pathlib import Path
 from typing import Optional
 
