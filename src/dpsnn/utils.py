@@ -2,7 +2,8 @@
 from pathlib import Path
 from typing import Optional
 
-from .models import ConvAttackModel, SplitNN
+from .attacker import ConvAttackModel
+from .models import SplitNN
 
 
 def load_classifier(model_path: Path, noise: Optional[float] = None) -> SplitNN:
