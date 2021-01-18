@@ -58,6 +58,7 @@ a model inversion attack.
     - Evaluate privacy parameters
     - Bound intermediate data with tanh to get epsilon estimate?
     - Evaluate privacy by measuring raw data/recreated data similarity
+- [ ] Run on CIFAR10
 
 ## Get started
 
@@ -98,6 +99,30 @@ using noise drawn from Laplacian distribution with scale `<noise_level>` and NoP
 
 - `python scripts/train_attacker.py --model <name>` to train an attacker on a trained model,
 `<name>`
+
+Classifiers are stored in [models/classifiers](./models/classifiers/)
+and are named like `mnist_<noise>noise_<nopeek>nopeek_epoch=<X>.ckpt`,
+where `<noise>` is the scale of laplacian noise added to the intermediate
+tensor _during training_ as a decimal. `...05noise` means scale 0.5,
+`...10noise` means scale 1.0.
+`<nopeek>` is the weighting of NoPeek loss
+in the loss function,
+using the same decimal scheme as with noise.
+`<X>` is the number of training epochs
+during which the classifier was performing the best.
+
+Attack models are stored in [models/attackers](./models/attackers/)
+and are named like
+`mnist_attacker_model<<classifier>>_set<noise>noise.ckpt`,
+where `<classifier>` is the stem
+(everything but the ckpt suffix)
+of the classifier it's attacking.
+`<noise>` refers to the scale of noise applied
+to the intermediate tensor
+_after training_.
+`_set<noise>noise` is not included
+if the noise scale of the classifier
+does not change from what it was trained on.
 
 ### Run experiments
 
