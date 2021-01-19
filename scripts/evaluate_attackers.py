@@ -89,8 +89,18 @@ def _evaluate_attackers(
 
     val_loader = _load_attack_validation_data(project_root)
 
+    results_file_path = results_path / "attaack_performances.csv"
+    if results_file_path.exists():
+        existing_models = pd.read_csv(results_file_path)["Model"].tolist()
+    else:
+        existing_models = []
+
     try:
         for classifier_path in (models_path / "classifiers").glob("*.ckpt"):
+            if not args.evaluate_all and classifier_path.stem in existing_models:
+                logging.info(f"Skipping {classifier_path.stem} - Already evaluated")
+                continue
+
             model = load_classifier(classifier_path)
 
             classifier_root_name = get_root_model_name(classifier_path.stem)
@@ -129,12 +139,20 @@ def _evaluate_attackers(
     except KeyboardInterrupt:
         pass
 
-    results.to_csv(results_path / "attack_performances.csv", index=False)
+    results.to_csv(results_file_path, index=False)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluating an attacker's reconstructions")
     parser.add_argument("--validation-model", required=True, type=str, help="Name of the classifier to evaluate attack accuracy")
+    parser.add_argument(
+        "--all",
+        dest="evaluate_all",
+        action="store_true",
+        help="Provide this flag to validate all models in 'classifiers' folder. Otherwise"
+        " only validate models not already in 'model_performances.csv' results file.",
+    )
+    parser.set_defaults(evaluate_all=False)
     args = parser.parse_args()
 
     logging.basicConfig(
