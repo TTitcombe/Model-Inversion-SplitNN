@@ -1,7 +1,11 @@
 """Utility code"""
+import re
 from pathlib import Path
 from typing import Optional
 
+import torch
+
+from .attacker import AttackValidationSplitNN, ConvAttackModel
 from .models import SplitNN
 
 
@@ -34,3 +38,33 @@ def load_classifier(model_path: Path, noise: Optional[float] = None) -> SplitNN:
     model.freeze()
 
     return model
+
+
+def load_validator(
+    model_path: Path, noise: Optional[float] = None
+) -> AttackValidationSplitNN:
+    model_path = model_path.with_suffix(".ckpt")
+
+    model = AttackValidationSplitNN.load_from_checkpoint((str(model_path)))
+    model.prepare_data()
+    model.eval()
+
+    if noise:
+        model.set_noise(noise)
+
+    model.freeze()
+
+    return model
+
+
+def load_attacker(attacker_path: Path) -> ConvAttackModel:
+    attack_model = ConvAttackModel({})
+    attack_model.load_state_dict(torch.load(attacker_path))
+    attack_model.eval()
+
+    return attack_model
+
+
+def get_root_model_name(model_name: str) -> str:
+    model_name = re.sub("_?epoch=[0-9]{2}", "", model_name)
+    return re.sub("\.ckpt", "", model_name)

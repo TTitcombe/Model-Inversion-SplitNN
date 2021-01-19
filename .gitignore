@@ -143,3 +143,7 @@ data/*
 notebooks/*/data/
 lightning_logs/
 docs/
+
+# Personal script for training attackers
+# May add to source control later
+train_attackers.sh

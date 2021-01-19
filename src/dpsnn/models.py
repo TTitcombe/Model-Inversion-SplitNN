@@ -173,10 +173,8 @@ class SplitNN(pl.LightningModule):
 
 
 class ReLUSplitNN(SplitNN):
-    def __init__(self, noise_scale: float = 0.0) -> None:
-        super().__init__()
-
-        self._noise = torch.distributions.Laplace(0.0, noise_scale)
+    def __init__(self, hparams) -> None:
+        super().__init__(hparams)
 
         self.part1 = torch.nn.Sequential(
             torch.nn.Conv2d(1, 32, 3, 1),

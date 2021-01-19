@@ -10,7 +10,7 @@ import torchvision.transforms as transforms
 from torchvision.datasets import MNIST
 
 from dpsnn import AttackDataset, AttackModel, ConvAttackModel, SplitNN
-from dpsnn.utils import load_classifier
+from dpsnn.utils import get_root_model_name, load_classifier
 
 
 def _load_attack_training_dataset(root):
@@ -66,8 +66,7 @@ def _load_attack_training_dataset(root):
 
 def _get_attacker_save_path(root: Path, args) -> str:
     model_name = args.model
-    model_name = re.sub("_?epoch=[0-9]{2}", "", model_name)
-    model_name = re.sub("\.ckpt", "", model_name)
+    model_name = get_root_model_name(model_name)
 
     attacker_name = f"{args.saveas}_model<{model_name}>"
 
@@ -120,10 +119,10 @@ if __name__ == "__main__":
         help="If provided, set the model's noise level. Otherwise, do not change the model's noise from when it was trained (default = None)",
     )
     parser.add_argument(
-        "--batch_size", default=128, type=int, help="Batch size (default 128)"
+        "--batch-size", default=128, type=int, help="Batch size (default 128)"
     )
     parser.add_argument(
-        "--learning_rate",
+        "--learning-rate",
         default=1e-4,
         type=float,
         help="Starting learning rate (default 1e-4)",
@@ -136,13 +135,13 @@ if __name__ == "__main__":
         "Note that '_<model>' will be appended to the end of the name",
     )
     parser.add_argument(
-        "--overfit_pct",
+        "--overfit-pct",
         default=0.0,
         type=float,
         help="Proportion of training data to use (default 0.0 [all data])",
     )
     parser.add_argument(
-        "--max_epochs",
+        "--max-epochs",
         type=int,
         default=10,
         help="Number of epoch to train for (default = 10)",
@@ -157,7 +156,9 @@ if __name__ == "__main__":
     project_root = Path(__file__).resolve().parents[1]
 
     # ----- Models -----
-    target_model = load_classifier(project_root / "models" / "classifiers" / args.model, args.model_noise)
+    target_model = load_classifier(
+        project_root / "models" / "classifiers" / args.model, args.model_noise
+    )
     attack_model = ConvAttackModel(args)
 
     # ----- Train model -----
