@@ -16,7 +16,8 @@ from pytorch_lightning import metrics
 from torchvision.datasets import MNIST
 
 from dpsnn import AttackValidationSplitNN, DistanceCorrelationLoss, SplitNN
-from dpsnn.utils import get_root_model_name, load_attacker, load_classifier, load_validator
+from dpsnn.utils import (get_root_model_name, load_attacker, load_classifier,
+                         load_validator)
 
 
 def _load_attack_validation_data(project_root):
