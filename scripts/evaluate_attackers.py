@@ -6,15 +6,17 @@ import argparse
 import logging
 import os
 from pathlib import Path
-from typing import List, Tuple
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
 import torch
+import torchvision.transforms as transforms
 from pytorch_lightning import metrics
+from torchvision.datasets import MNIST
 
-from dpsnn import DistanceCorrelationLoss, SplitNN
-from dpsnn.utils import get_root_model_name, load_attacker, load_classifier
+from dpsnn import AttackValidationSplitNN, DistanceCorrelationLoss, SplitNN
+from dpsnn.utils import get_root_model_name, load_attacker, load_classifier, load_validator
 
 
 def _load_attack_validation_data(project_root):
@@ -34,13 +36,24 @@ def _load_attack_validation_data(project_root):
     return torch.utils.data.DataLoader(val, batch_size=256)
 
 
-def _evaluate_attacker_accuracy(classifier):
-    raise NotImplementedError
+def _evaluate_attacker_accuracy(classifier, attacker, validator, validation_dataloader) -> float:
+    valid_accuracy = metrics.Accuracy(compute_on_step=False)
+
+    for x, y in validation_dataloader():
+        with torch.no_grad():
+            _, intermediate = model(x)
+            reconstructed_x = attacker(intermediate)
+            y_hat, _ = validator(reconstructed_x)
+
+        valid_accuracy(y_hat, y)
+
+    total_valid_accuracy = valid_accuracy.compute()
+    return total_valid_accuracy.item() * 100
 
 
 def _evaluate_distance_correlation(
     classifier, attacker, validation_dataloader: torch.utils.data.DataLoader
-) -> Tuple[List, List]:
+) -> Tuple[float, float]:
     distance_correlation = DistanceCorrelationLoss()
 
     dcorr_valid = []
@@ -59,7 +72,7 @@ def _evaluate_distance_correlation(
 
 
 def _evaluate_attackers(
-    project_root: Path, models_path: Path, results_path: Path
+    project_root: Path, models_path: Path, results_path: Path, args
 ) -> None:
     results = pd.DataFrame(
         columns=[
@@ -67,8 +80,11 @@ def _evaluate_attackers(
             "Attacker",
             "MeanValDCorr",
             "SEValDCorr",
+            "ValAccuracy"
         ]
     )
+
+    validator = load_validator((models_path / args.validation_model).with_suffix(".ckpt"))
 
     val_loader = _load_attack_validation_data(project_root)
 
@@ -93,6 +109,8 @@ def _evaluate_attackers(
 
             logging.info(f"Benchmarking {classifier_path.stem} and {attacker_name}")
 
+            val_acc = _evaluate_attacker_accuracy(attacker, validator)
+
             (
                 val_dcorr_mean,
                 val_dcorr_se,
@@ -103,6 +121,7 @@ def _evaluate_attackers(
                 "Attacker": attacker_name,
                 "MeanValDCorr": val_dcorr_mean,
                 "SEValDCorr": val_dcorr_se,
+                "ValAccuracy": val_acc,
             }
 
             results = results.append(model_results, ignore_index=True)
@@ -113,6 +132,10 @@ def _evaluate_attackers(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Evaluating an attacker's reconstructions")
+    parser.add_argument("--validation-model", required=True, type=str, help="Name of the classifier to evaluate attack accuracy")
+    args = parser.parse_args()
+
     logging.basicConfig(
         format="%(asctime)s %(message)s", level=logging.INFO, datefmt="%I:%M:%S"
     )
@@ -121,4 +144,4 @@ if __name__ == "__main__":
     models_path = project_root / "models" / "classifiers"
     results_path = project_root / "results" / "quantitative_measures"
 
-    _evaluate_models(models_path, results_path)
+    _evaluate_attackers(project_root, models_path, results_path, args)
