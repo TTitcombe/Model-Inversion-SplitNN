@@ -5,7 +5,7 @@ from typing import Optional
 
 import torch
 
-from .attacker import ConvAttackModel
+from .attacker import AttackValidationSplitNN, ConvAttackModel
 from .models import SplitNN
 
 
@@ -29,6 +29,21 @@ def load_classifier(model_path: Path, noise: Optional[float] = None) -> SplitNN:
     model_path = model_path.with_suffix(".ckpt")
 
     model = SplitNN.load_from_checkpoint((str(model_path)))
+    model.prepare_data()
+    model.eval()
+
+    if noise:
+        model.set_noise(noise)
+
+    model.freeze()
+
+    return model
+
+
+def load_validator(model_path: Path, noise: Optional[float] = None) -> AttackValidationSplitNN:
+    model_path = model_path.with_suffix(".ckpt")
+
+    model = AttackValidationSplitNN.load_from_checkpoint((str(model_path)))
     model.prepare_data()
     model.eval()
 
