@@ -40,7 +40,9 @@ def load_classifier(model_path: Path, noise: Optional[float] = None) -> SplitNN:
     return model
 
 
-def load_validator(model_path: Path, noise: Optional[float] = None) -> AttackValidationSplitNN:
+def load_validator(
+    model_path: Path, noise: Optional[float] = None
+) -> AttackValidationSplitNN:
     model_path = model_path.with_suffix(".ckpt")
 
     model = AttackValidationSplitNN.load_from_checkpoint((str(model_path)))

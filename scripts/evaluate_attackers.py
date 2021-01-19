@@ -16,8 +16,12 @@ from pytorch_lightning import metrics
 from torchvision.datasets import MNIST
 
 from dpsnn import AttackValidationSplitNN, DistanceCorrelationLoss, SplitNN
-from dpsnn.utils import (get_root_model_name, load_attacker, load_classifier,
-                         load_validator)
+from dpsnn.utils import (
+    get_root_model_name,
+    load_attacker,
+    load_classifier,
+    load_validator,
+)
 
 
 def _load_attack_validation_data(project_root):
@@ -37,7 +41,9 @@ def _load_attack_validation_data(project_root):
     return torch.utils.data.DataLoader(val, batch_size=256)
 
 
-def _evaluate_attacker_accuracy(classifier, attacker, validator, validation_dataloader) -> float:
+def _evaluate_attacker_accuracy(
+    classifier, attacker, validator, validation_dataloader
+) -> float:
     valid_accuracy = metrics.Accuracy(compute_on_step=False)
 
     for x, y in validation_dataloader:
@@ -76,16 +82,12 @@ def _evaluate_attackers(
     project_root: Path, models_path: Path, results_path: Path, args
 ) -> None:
     results = pd.DataFrame(
-        columns=[
-            "Model",
-            "Attacker",
-            "MeanValDCorr",
-            "SEValDCorr",
-            "ValAccuracy"
-        ]
+        columns=["Model", "Attacker", "MeanValDCorr", "SEValDCorr", "ValAccuracy"]
     )
 
-    validator = load_validator((models_path / "classifiers" / args.validation_model).with_suffix(".ckpt"))
+    validator = load_validator(
+        (models_path / "classifiers" / args.validation_model).with_suffix(".ckpt")
+    )
 
     val_loader = _load_attack_validation_data(project_root)
 
@@ -120,7 +122,9 @@ def _evaluate_attackers(
 
             logging.info(f"Benchmarking {classifier_path.stem} and {attacker_name}")
 
-            val_acc = _evaluate_attacker_accuracy(model, attacker, validator, val_loader)
+            val_acc = _evaluate_attacker_accuracy(
+                model, attacker, validator, val_loader
+            )
 
             (
                 val_dcorr_mean,
@@ -143,8 +147,15 @@ def _evaluate_attackers(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Evaluating an attacker's reconstructions")
-    parser.add_argument("--validation-model", required=True, type=str, help="Name of the classifier to evaluate attack accuracy")
+    parser = argparse.ArgumentParser(
+        description="Evaluating an attacker's reconstructions"
+    )
+    parser.add_argument(
+        "--validation-model",
+        required=True,
+        type=str,
+        help="Name of the classifier to evaluate attack accuracy",
+    )
     parser.add_argument(
         "--all",
         dest="evaluate_all",
