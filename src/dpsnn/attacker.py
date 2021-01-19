@@ -1,7 +1,7 @@
 """
 Code relating to attack model
 """
-from pathlib import Pat
+from pathlib import Path
 
 import pytorch_lightning as pl
 import torch
