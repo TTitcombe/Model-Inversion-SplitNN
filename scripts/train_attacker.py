@@ -119,10 +119,10 @@ if __name__ == "__main__":
         help="If provided, set the model's noise level. Otherwise, do not change the model's noise from when it was trained (default = None)",
     )
     parser.add_argument(
-        "--batch_size", default=128, type=int, help="Batch size (default 128)"
+        "--batch-size", default=128, type=int, help="Batch size (default 128)"
     )
     parser.add_argument(
-        "--learning_rate",
+        "--learning-rate",
         default=1e-4,
         type=float,
         help="Starting learning rate (default 1e-4)",
@@ -135,13 +135,13 @@ if __name__ == "__main__":
         "Note that '_<model>' will be appended to the end of the name",
     )
     parser.add_argument(
-        "--overfit_pct",
+        "--overfit-pct",
         default=0.0,
         type=float,
         help="Proportion of training data to use (default 0.0 [all data])",
     )
     parser.add_argument(
-        "--max_epochs",
+        "--max-epochs",
         type=int,
         default=10,
         help="Number of epoch to train for (default = 10)",

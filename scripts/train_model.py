@@ -44,22 +44,22 @@ if __name__ == "__main__":
         description="Train a SplitNN with differential privacy optionally applied to intermediate data"
     )
     parser.add_argument(
-        "--noise_scale",
+        "--noise-scale",
         type=float,
         required=True,
         help="Scale of laplacian noise from which to draw. If 0.0, no noise is added. Required.",
     )
     parser.add_argument(
-        "--nopeek_weight",
+        "--nopeek-weight",
         type=float,
         required=True,
         help="Weighting of nopeek loss term. Required.",
     )
     parser.add_argument(
-        "--batch_size", default=128, type=int, help="Batch size (default 128)"
+        "--batch-size", default=128, type=int, help="Batch size (default 128)"
     )
     parser.add_argument(
-        "--learning_rate",
+        "--learning-rate",
         default=1e-4,
         type=float,
         help="Starting learning rate (default 1e-4)",
@@ -72,13 +72,13 @@ if __name__ == "__main__":
         "Note that '_{noisescale}noise' will be appended to the end of the name",
     )
     parser.add_argument(
-        "--overfit_pct",
+        "--overfit-pct",
         default=0.0,
         type=float,
         help="Proportion of training data to use (default 0.0 [all data])",
     )
     parser.add_argument(
-        "--max_epochs",
+        "--max-epochs",
         type=int,
         default=10,
         help="Number of epoch to train for (default = 10)",
