@@ -1,9 +1,15 @@
 """
 Code relating to attack model
 """
+from pathlib import Pat
+
 import pytorch_lightning as pl
 import torch
-from torch.utils.data import DataLoader
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader, Subset
+from torchvision.datasets import MNIST
+
+from .models import SplitNN
 
 
 # ----- Models -----
@@ -168,3 +174,28 @@ class AttackDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         return self.intermediate_data[idx], self.actual_data[idx]
+
+
+# ----- Attack validation -----
+class AttackValidationSplitNN(SplitNN):
+    def prepare_data(self):
+        data_transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                # PyTorch examples; https://github.com/pytorch/examples/blob/master/mnist/main.py
+                transforms.Normalize((0.1307,), (0.3081,)),
+            ]
+        )
+
+        data_dir = Path.cwd() / "data"
+
+        # Train the validation classifier on the target classifiers test
+        # dataset
+        self.train_data = (
+            MNIST(data_dir, download=True, train=False, transform=data_transform),
+        )
+
+        self.val_data = Subset(
+            MNIST(data_dir, download=True, train=True, transform=data_transform),
+            range(5000),
+        )
