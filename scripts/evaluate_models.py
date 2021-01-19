@@ -133,8 +133,13 @@ def _evaluate_models(models_path: Path, results_path: Path, args) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Validate classifier characteristics")
-    parser.add_argument('--all', dest="evaluate_all", action='store_true', help="Provide this flag to validate all models in 'classifiers' folder. Otherwise"
-    " only validate models not already in 'model_performances.csv' results file.")
+    parser.add_argument(
+        "--all",
+        dest="evaluate_all",
+        action="store_true",
+        help="Provide this flag to validate all models in 'classifiers' folder. Otherwise"
+        " only validate models not already in 'model_performances.csv' results file.",
+    )
     parser.set_defaults(evaluate_all=False)
 
     args = parser.parse_args()
