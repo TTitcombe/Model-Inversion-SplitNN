@@ -40,9 +40,9 @@ def _load_attack_validation_data(project_root):
 def _evaluate_attacker_accuracy(classifier, attacker, validator, validation_dataloader) -> float:
     valid_accuracy = metrics.Accuracy(compute_on_step=False)
 
-    for x, y in validation_dataloader():
+    for x, y in validation_dataloader:
         with torch.no_grad():
-            _, intermediate = model(x)
+            _, intermediate = classifier(x)
             reconstructed_x = attacker(intermediate)
             y_hat, _ = validator(reconstructed_x)
 
@@ -85,7 +85,7 @@ def _evaluate_attackers(
         ]
     )
 
-    validator = load_validator((models_path / args.validation_model).with_suffix(".ckpt"))
+    validator = load_validator((models_path / "classifiers" / args.validation_model).with_suffix(".ckpt"))
 
     val_loader = _load_attack_validation_data(project_root)
 
@@ -110,15 +110,15 @@ def _evaluate_attackers(
 
             logging.info(f"Benchmarking {classifier_path.stem} and {attacker_name}")
 
-            val_acc = _evaluate_attacker_accuracy(attacker, validator)
+            val_acc = _evaluate_attacker_accuracy(model, attacker, validator, val_loader)
 
             (
                 val_dcorr_mean,
                 val_dcorr_se,
-            ) = _evaluate_distance_correlation(model)
+            ) = _evaluate_distance_correlation(model, attacker, val_loader)
 
             model_results = {
-                "Model": model_path.stem,
+                "Model": classifier_path.stem,
                 "Attacker": attacker_name,
                 "MeanValDCorr": val_dcorr_mean,
                 "SEValDCorr": val_dcorr_se,
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     )
 
     project_root = Path(__file__).parents[1]
-    models_path = project_root / "models" / "classifiers"
+    models_path = project_root / "models"
     results_path = project_root / "results" / "quantitative_measures"
 
     _evaluate_attackers(project_root, models_path, results_path, args)
