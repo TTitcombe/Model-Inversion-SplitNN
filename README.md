@@ -144,6 +144,23 @@ We have provided relevant analysis in the [`notebooks/`](notebooks) folder.
 Be aware that previous exploratory notebooks were removed.
 Look over previous commits for a full history of experimentation.
 
+## Data
+
+The [`data/`](./data/)
+folder is intentionally
+left empty
+to preserve the project
+structure.
+This project uses the
+MNIST
+and EMNIST
+datasets.
+Each dataset
+will be downloaded to
+`data/`
+when first used
+by a script.
+
 ## Contributing
 
 If you have a question about
