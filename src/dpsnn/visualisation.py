@@ -36,5 +36,6 @@ def plot_images(tensors, rows: Optional[int] = None, savepath: Optional[str] = N
 
     if savepath:
         plt.imsave(savepath, grid_image.detach().numpy())
-    else:
-        plt.imshow(grid_image)
+
+    plt.imshow(grid_image)
+    plt.show()
