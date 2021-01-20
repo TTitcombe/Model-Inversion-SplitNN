@@ -7,7 +7,7 @@ from typing import Optional
 import pytorch_lightning as pl
 import torch
 import torchvision.transforms as transforms
-from torchvision.datasets import MNIST
+from torchvision.datasets import EMNIST, MNIST
 
 from dpsnn import AttackDataset, AttackModel, ConvAttackModel, SplitNN
 from dpsnn.utils import get_root_model_name, load_classifier
@@ -28,15 +28,26 @@ def _load_attack_training_dataset(root, args):
     if 0.0 < args.overfit_pct <= 1.0:
         n_train = int(n_train * args.overfit_pct)
 
-    train = torch.utils.data.Subset(
-        MNIST(root / "data", download=True, train=True, transform=transform),
-        range(train_start_idx, train_start_idx + n_train),
-    )
+    if args.use_emnist:
+        train = torch.utils.data.Subset(
+            EMNIST(root / "data", "letters", download=True, train=True, transform=transform),
+            range(train_start_idx, train_start_idx + n_train),
+        )
 
-    val = torch.utils.data.Subset(
-        MNIST(root / "data", download=True, train=True, transform=transform),
-        range(45_000, 50_000),
-    )
+        val = torch.utils.data.Subset(
+            EMNIST(root / "data", "letters", download=True, train=True, transform=transform),
+            range(45_000, 50_000),
+        )
+    else:
+        train = torch.utils.data.Subset(
+            MNIST(root / "data", download=True, train=True, transform=transform),
+            range(train_start_idx, train_start_idx + n_train),
+        )
+
+        val = torch.utils.data.Subset(
+            MNIST(root / "data", download=True, train=True, transform=transform),
+            range(45_000, 50_000),
+        )
 
     trainloader = torch.utils.data.DataLoader(train, batch_size=256)
     valloader = torch.utils.data.DataLoader(val, batch_size=256)
@@ -130,6 +141,11 @@ if __name__ == "__main__":
         help="If provided, set the model's noise level. Otherwise, do not change the model's noise from when it was trained (default = None)",
     )
     parser.add_argument(
+        "--emnist",
+        dest="use_emnist",
+        action="store_true"
+    )
+    parser.add_argument(
         "--batch-size", default=128, type=int, help="Batch size (default 128)"
     )
     parser.add_argument(
@@ -161,7 +177,11 @@ if __name__ == "__main__":
         "--gpus", default=None, help="Number of gpus to use (default None)"
     )
 
+    parser.set_defaults(use_emnist=False)
+
     args = parser.parse_args()
+    if args.saveas == "mnist_attacker" and args.use_emnist:
+        args.saveas = "emnist_attacker"
 
     # File paths
     project_root = Path(__file__).resolve().parents[1]
