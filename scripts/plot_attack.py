@@ -8,7 +8,7 @@ from pathlib import Path
 
 import torch
 import torchvision.transforms as transforms
-from torchvision.datasets import EMNIST, MNIST
+from torchvision.datasets import MNIST
 
 from dpsnn import AttackDataset, ConvAttackModel, SplitNN, plot_images
 from dpsnn.utils import load_attacker, load_classifier
@@ -30,16 +30,10 @@ def main(root, args):
         ]
     )
 
-    if args.use_emnist:
-        attack_val_dataset = torch.utils.data.Subset(
-            EMNIST(project_root / "data", "letters", download=True, train=True, transform=transform),
-            range(45_000, 50_000),
-        )
-    else:
-        attack_val_dataset = torch.utils.data.Subset(
-            MNIST(project_root / "data", download=True, train=True, transform=transform),
-            range(45_000, 50_000),
-        )
+    attack_val_dataset = torch.utils.data.Subset(
+        MNIST(project_root / "data", download=True, train=True, transform=transform),
+        range(45_000, 50_000),
+    )
 
     ims = []
 
@@ -94,13 +88,7 @@ if __name__ == "__main__":
         default=None,
         help="Name to save plot as. Will be placed in results/figures/ directory.",
     )
-    parser.add_argument(
-        "--emnist",
-        dest="use_emnist",
-        action="store_true"
-    )
 
-    parser.set_defaults(use_emnist=False)
     args = parser.parse_args()
 
     project_root = Path(__file__).parents[1]
