@@ -47,18 +47,19 @@ a model inversion attack.
 - [ ] Improve models
     - Current models have large accuracy/privacy trade-off. Tune NoPeek and DP-SplitNN to improve performance
 - [ ] Explore limits
-    - Impact on model size / architecture
-    - Can it work with datasets more complex than MNIST
-    - How many data points does the attacker need
+    - [ ] Impact of dataset size
+    - [ ] Impact of dataset distribution
+    - [ ] Impact of model size
+    - [ ] Impact of architecture
 - [x] Integrate NoPeekNN
     - NoPeekNN cannot defend against the attack on its own,
     but it has an effect similar to introducing more layers into the SplitNN
     (recreations from the attack get worse)
 - [ ] Formalise
-    - Evaluate privacy parameters
-    - Bound intermediate data with tanh to get epsilon estimate?
-    - Evaluate privacy by measuring raw data/recreated data similarity
-- [ ] Run on CIFAR10
+    - [ ] Evaluate privacy parameters
+    - [ ] Assess distribution of intermediate data
+    - [X] Evaluate privacy by measuring raw data/recreated data similarity
+- [ ] Redo with CIFAR10
 
 ## Get started
 
@@ -145,10 +146,23 @@ Look over previous commits for a full history of experimentation.
 
 ## Contributing
 
+If you have a question about
+the paper/
+experiments/
+results,
+or have
+noticed a bug in the code,
+please open an issue
+in this repository.
+
+If you are providing code,
+please follow these conventions:
+
 - `black` to format code
 - `isort` to format imports
 - Add type hints
-- Use `pytorch_lightning` to build PyTorch models that can scale
+- Add docstrings to functions and classes
+- Use `pytorch_lightning` to build PyTorch models
 
 ## License
 
