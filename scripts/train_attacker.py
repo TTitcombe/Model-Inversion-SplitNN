@@ -13,7 +13,7 @@ from dpsnn import AttackDataset, AttackModel, ConvAttackModel, SplitNN
 from dpsnn.utils import get_root_model_name, load_classifier
 
 
-def _load_attack_training_dataset(root):
+def _load_attack_training_dataset(root, args):
     transform = transforms.Compose(
         [
             transforms.ToTensor(),
@@ -22,9 +22,15 @@ def _load_attack_training_dataset(root):
         ]
     )
 
+    train_start_idx = 40_000  # first 40_000 are used to train target model
+    n_train = 5_000
+
+    if 0.0 < args.overfit_pct <= 1.0:
+        n_train = int(n_train * args.overfit_pct)
+
     train = torch.utils.data.Subset(
         MNIST(root / "data", download=True, train=True, transform=transform),
-        range(40_000, 45_000),  # first 40_000 are used to train target model
+        range(train_start_idx, train_start_idx + n_train),
     )
 
     val = torch.utils.data.Subset(
@@ -68,7 +74,12 @@ def _get_attacker_save_path(root: Path, args) -> str:
     model_name = args.model
     model_name = get_root_model_name(model_name)
 
-    attacker_name = f"{args.saveas}_model<{model_name}>"
+    if args.overfit_pct == 0.0:
+        data_pct = ""
+    else:
+        data_pct = f"{args.overfit_pct}datapct_".replace(".", "")
+
+    attacker_name = f"{args.saveas}_{data_pct}model<{model_name}>"
 
     if args.model_noise:
         attacker_name += f"_set{args.model_noise}noise".replace(".", "")
@@ -77,7 +88,7 @@ def _get_attacker_save_path(root: Path, args) -> str:
 
 
 def main(root, args):
-    attack_trainloader, attack_valloader = _load_attack_training_dataset(root)
+    attack_trainloader, attack_valloader = _load_attack_training_dataset(root, args)
 
     attacker_save_path = _get_attacker_save_path(root, args)
 
@@ -138,7 +149,7 @@ if __name__ == "__main__":
         "--overfit-pct",
         default=0.0,
         type=float,
-        help="Proportion of training data to use (default 0.0 [all data])",
+        help="Proportion of training data to use (default = 0.0 [all data])",
     )
     parser.add_argument(
         "--max-epochs",
