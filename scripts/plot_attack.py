@@ -43,21 +43,14 @@ def main(root, args):
 
     ims = []
 
-    if args.use_emnist:
-        class_labels = list(range(1, 27))
-        rows = 8
-    else:
-        class_labels = list(range(10))
-        rows = 4
-
-    class_idx = 0
+    label_to_plot = 0
     idx = 10
 
     while True:
         image, im_label = attack_val_dataset[idx]
         idx += 1
 
-        if im_label != class_labels[class_idx]:
+        if im_label != label_to_plot:
             continue
 
         ims.append(image)
@@ -69,8 +62,8 @@ def main(root, args):
         reconstructed = reconstructed.squeeze(0)
         ims.append(reconstructed)
 
-        class_idx += 1
-        if class_idx == len(class_labels):
+        label_to_plot += 1
+        if label_to_plot == 10:
             break
 
     if args.savepath:
@@ -78,7 +71,7 @@ def main(root, args):
     else:
         savepath = None
 
-    plot_images(ims, rows=rows, savepath=savepath)
+    plot_images(ims, rows=4, savepath=savepath)
 
 
 if __name__ == "__main__":
