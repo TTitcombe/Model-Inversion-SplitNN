@@ -10,25 +10,29 @@ import torch
 import torchvision.transforms as transforms
 from torchvision.datasets import MNIST
 
-from dpsnn import SplitNN, ConvAttackModel, plot_images, AttackDataset
+from dpsnn import AttackDataset, ConvAttackModel, SplitNN, plot_images
 from dpsnn.utils import load_attacker, load_classifier
 
 
 def main(root, args):
-    target_model = load_classifier((root / "models" / "classifiers" / args.model).with_suffix(".ckpt"))
-    attack_model = load_attacker((root / "models" / "attackers" / args.attacker).with_suffix(".ckpt"))
+    target_model = load_classifier(
+        (root / "models" / "classifiers" / args.model).with_suffix(".ckpt")
+    )
+    attack_model = load_attacker(
+        (root / "models" / "attackers" / args.attacker).with_suffix(".ckpt")
+    )
 
     transform = transforms.Compose(
-            [
-                transforms.ToTensor(),
-                # PyTorch examples; https://github.com/pytorch/examples/blob/master/mnist/main.py
-                transforms.Normalize((0.1307,), (0.3081,)),
-            ]
+        [
+            transforms.ToTensor(),
+            # PyTorch examples; https://github.com/pytorch/examples/blob/master/mnist/main.py
+            transforms.Normalize((0.1307,), (0.3081,)),
+        ]
     )
 
     attack_val_dataset = torch.utils.data.Subset(
-            MNIST(project_root / "data", download=True, train=True, transform=transform),
-            range(45_000, 50_000),
+        MNIST(project_root / "data", download=True, train=True, transform=transform),
+        range(45_000, 50_000),
     )
 
     ims = []
@@ -66,9 +70,24 @@ def main(root, args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Attack visualisation script")
-    parser.add_argument("--model", type=str, required=True, help="Name of classifier. Assumed to be in models/classifiers/ directory.")
-    parser.add_argument("--attacker", type=str, required=True, help="Name of attack model. Assumed to be in models/attackers/ directory.")
-    parser.add_argument("--savepath", type=str, default=None, help="Name to save plot as. Will be placed in results/figures/ directory.")
+    parser.add_argument(
+        "--model",
+        type=str,
+        required=True,
+        help="Name of classifier. Assumed to be in models/classifiers/ directory.",
+    )
+    parser.add_argument(
+        "--attacker",
+        type=str,
+        required=True,
+        help="Name of attack model. Assumed to be in models/attackers/ directory.",
+    )
+    parser.add_argument(
+        "--savepath",
+        type=str,
+        default=None,
+        help="Name to save plot as. Will be placed in results/figures/ directory.",
+    )
 
     args = parser.parse_args()
 
