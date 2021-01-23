@@ -7,13 +7,13 @@ from typing import Optional
 import pytorch_lightning as pl
 import torch
 import torchvision.transforms as transforms
-from torchvision.datasets import MNIST
+from torchvision.datasets import EMNIST, MNIST
 
 from dpsnn import AttackDataset, AttackModel, ConvAttackModel, SplitNN
 from dpsnn.utils import get_root_model_name, load_classifier
 
 
-def _load_attack_training_dataset(root):
+def _load_attack_training_dataset(root, args):
     transform = transforms.Compose(
         [
             transforms.ToTensor(),
@@ -22,15 +22,32 @@ def _load_attack_training_dataset(root):
         ]
     )
 
-    train = torch.utils.data.Subset(
-        MNIST(root / "data", download=True, train=True, transform=transform),
-        range(40_000, 45_000),  # first 40_000 are used to train target model
-    )
+    train_start_idx = 40_000  # first 40_000 are used to train target model
+    n_train = 5_000
 
-    val = torch.utils.data.Subset(
-        MNIST(root / "data", download=True, train=True, transform=transform),
-        range(45_000, 50_000),
-    )
+    if 0.0 < args.overfit_pct <= 1.0:
+        n_train = int(n_train * args.overfit_pct)
+
+    if args.use_emnist:
+        train = torch.utils.data.Subset(
+            EMNIST(root / "data", "letters", download=True, train=True, transform=transform),
+            range(train_start_idx, train_start_idx + n_train),
+        )
+
+        val = torch.utils.data.Subset(
+            EMNIST(root / "data", "letters", download=True, train=True, transform=transform),
+            range(45_000, 50_000),
+        )
+    else:
+        train = torch.utils.data.Subset(
+            MNIST(root / "data", download=True, train=True, transform=transform),
+            range(train_start_idx, train_start_idx + n_train),
+        )
+
+        val = torch.utils.data.Subset(
+            MNIST(root / "data", download=True, train=True, transform=transform),
+            range(45_000, 50_000),
+        )
 
     trainloader = torch.utils.data.DataLoader(train, batch_size=256)
     valloader = torch.utils.data.DataLoader(val, batch_size=256)
@@ -68,7 +85,12 @@ def _get_attacker_save_path(root: Path, args) -> str:
     model_name = args.model
     model_name = get_root_model_name(model_name)
 
-    attacker_name = f"{args.saveas}_model<{model_name}>"
+    if args.overfit_pct == 0.0:
+        data_pct = ""
+    else:
+        data_pct = f"{args.overfit_pct}datapct_".replace(".", "")
+
+    attacker_name = f"{args.saveas}_{data_pct}model<{model_name}>"
 
     if args.model_noise:
         attacker_name += f"_set{args.model_noise}noise".replace(".", "")
@@ -77,7 +99,7 @@ def _get_attacker_save_path(root: Path, args) -> str:
 
 
 def main(root, args):
-    attack_trainloader, attack_valloader = _load_attack_training_dataset(root)
+    attack_trainloader, attack_valloader = _load_attack_training_dataset(root, args)
 
     attacker_save_path = _get_attacker_save_path(root, args)
 
@@ -119,6 +141,11 @@ if __name__ == "__main__":
         help="If provided, set the model's noise level. Otherwise, do not change the model's noise from when it was trained (default = None)",
     )
     parser.add_argument(
+        "--emnist",
+        dest="use_emnist",
+        action="store_true"
+    )
+    parser.add_argument(
         "--batch-size", default=128, type=int, help="Batch size (default 128)"
     )
     parser.add_argument(
@@ -138,7 +165,7 @@ if __name__ == "__main__":
         "--overfit-pct",
         default=0.0,
         type=float,
-        help="Proportion of training data to use (default 0.0 [all data])",
+        help="Proportion of training data to use (default = 0.0 [all data])",
     )
     parser.add_argument(
         "--max-epochs",
@@ -150,7 +177,11 @@ if __name__ == "__main__":
         "--gpus", default=None, help="Number of gpus to use (default None)"
     )
 
+    parser.set_defaults(use_emnist=False)
+
     args = parser.parse_args()
+    if args.saveas == "mnist_attacker" and args.use_emnist:
+        args.saveas = "emnist_attacker"
 
     # File paths
     project_root = Path(__file__).resolve().parents[1]
