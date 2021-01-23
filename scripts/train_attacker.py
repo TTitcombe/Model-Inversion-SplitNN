@@ -30,12 +30,16 @@ def _load_attack_training_dataset(root, args):
 
     if args.use_emnist:
         train = torch.utils.data.Subset(
-            EMNIST(root / "data", "letters", download=True, train=True, transform=transform),
+            EMNIST(
+                root / "data", "letters", download=True, train=True, transform=transform
+            ),
             range(train_start_idx, train_start_idx + n_train),
         )
 
         val = torch.utils.data.Subset(
-            EMNIST(root / "data", "letters", download=True, train=True, transform=transform),
+            EMNIST(
+                root / "data", "letters", download=True, train=True, transform=transform
+            ),
             range(45_000, 50_000),
         )
     else:
@@ -140,11 +144,7 @@ if __name__ == "__main__":
         default=None,
         help="If provided, set the model's noise level. Otherwise, do not change the model's noise from when it was trained (default = None)",
     )
-    parser.add_argument(
-        "--emnist",
-        dest="use_emnist",
-        action="store_true"
-    )
+    parser.add_argument("--emnist", dest="use_emnist", action="store_true")
     parser.add_argument(
         "--batch-size", default=128, type=int, help="Batch size (default 128)"
     )
