@@ -90,57 +90,54 @@ def _evaluate_models(models_path: Path, results_path: Path, args) -> None:
     else:
         results = pd.read_csv(results_file_path)
 
-    try:
-        for classifier_path in (models_path / "classifiers").glob("*.ckpt"):
-            """classifier_root_name = get_root_model_name(classifier_path.stem)
+    classifier_path = (models_path / "classifiers" / args.model).with_suffix(".ckpt")
+    """classifier_root_name = get_root_model_name(classifier_path.stem)
 
-            attacker_name = None
-            for _attacker in os.listdir(models_path / "attackers"):
-                if classifier_root_name in _attacker:
-                    attacker_name = _attacker
+    attacker_name = None
+    for _attacker in os.listdir(models_path / "attackers"):
+        if classifier_root_name in _attacker:
+            attacker_name = _attacker
 
-            if not attacker_name:
-                logging.info(
-                    f"Attacker not found for classifier {classifier_path.stem}"
-                )
-                continue"""
+    if not attacker_name:
+        logging.info(
+            f"Attacker not found for classifier {classifier_path.stem}"
+        )
+        continue"""
 
-            logging.info(f"Benchmarking {classifier_path.stem}")
+    logging.info(f"Benchmarking {classifier_path.stem} with {args.noise} noise scale")
 
-            model = load_classifier(classifier_path, set_noise=args.noise)
+    model = load_classifier(classifier_path, noise=args.noise)
 
-            train_acc, val_acc = _evaluate_model_accuracy(model)
-            logging.info(
-                f"{classifier_path.stem} - Train acc: {train_acc:.3f}; Val acc: {val_acc:.3f}"
-            )
+    train_acc, val_acc = _evaluate_model_accuracy(model)
+    logging.info(
+        f"{classifier_path.stem} - Train acc: {train_acc:.3f}; Val acc: {val_acc:.3f}"
+    )
 
-            """(
-                train_dcorr_mean,
-                train_dcorr_se,
-                val_dcorr_mean,
-                val_dcorr_se,
-            ) = _evaluate_distance_correlation(model)
-            logging.info(
-                f"{model_path.stem} - Train DCorr: {train_dcorr_mean} +/- {train_dcorr_se}; Val DCorr: {val_dcorr_mean} +/- {val_dcorr_se}"
-            )"""
+    """(
+        train_dcorr_mean,
+        train_dcorr_se,
+        val_dcorr_mean,
+        val_dcorr_se,
+    ) = _evaluate_distance_correlation(model)
+    logging.info(
+        f"{model_path.stem} - Train DCorr: {train_dcorr_mean} +/- {train_dcorr_se}; Val DCorr: {val_dcorr_mean} +/- {val_dcorr_se}"
+    )"""
 
-            model_results = {
-                "DateEvaluated": str(datetime.now().date()),
-                "Model": classifier_path.stem,
-                "Noise": args.noise,
-                "MeanTrainAcc": train_acc,
-                "SETrainAcc": None,
-                "MeanValAcc": val_acc,
-                "SEValAcc": None,
-                "MeanTrainDCorr": None,  # train_dcorr_mean,
-                "SETrainDCorr": None,  # train_dcorr_se,
-                "MeanValDCorr": None,  # val_dcorr_mean,
-                "SEValDCorr": None,  # val_dcorr_se,
-            }
+    model_results = {
+        "DateEvaluated": str(datetime.now().date()),
+        "Model": classifier_path.stem,
+        "Noise": args.noise,
+        "MeanTrainAcc": train_acc,
+        "SETrainAcc": None,
+        "MeanValAcc": val_acc,
+        "SEValAcc": None,
+        "MeanTrainDCorr": None,  # train_dcorr_mean,
+        "SETrainDCorr": None,  # train_dcorr_se,
+        "MeanValDCorr": None,  # val_dcorr_mean,
+        "SEValDCorr": None,  # val_dcorr_se,
+    }
 
-            results = results.append(model_results, ignore_index=True)
-    except KeyboardInterrupt:
-        pass
+    results = results.append(model_results, ignore_index=True)
 
     results.to_csv(results_file_path, index=False)
 
