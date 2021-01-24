@@ -85,6 +85,7 @@ def _evaluate_models(models_path: Path, results_path: Path, args) -> None:
                 "SETrainDCorr",
                 "MeanValDCorr",
                 "SEValDCorr",
+                "NoPeek",
             ]
         )
     else:
@@ -135,6 +136,7 @@ def _evaluate_models(models_path: Path, results_path: Path, args) -> None:
         "SETrainDCorr": None,  # train_dcorr_se,
         "MeanValDCorr": None,  # val_dcorr_mean,
         "SEValDCorr": None,  # val_dcorr_se,
+        "NoPeek": None,
     }
 
     results = results.append(model_results, ignore_index=True)
