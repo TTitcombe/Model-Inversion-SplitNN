@@ -1,6 +1,6 @@
 # Defending SplitNN with Noise
 
-Applying differential privacy to Split Neural networks (DPSNN).
+Applying noise to Split Neural networks.
 Code for NOT YET PUBLISHED.
 
 ## Summary
