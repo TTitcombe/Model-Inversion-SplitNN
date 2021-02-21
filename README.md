@@ -1,8 +1,7 @@
-# Differentially-Private-SplitNN
+# Defending SplitNN with Noise
 
 Applying differential privacy to Split Neural networks (DPSNN).
-Code for the paper
-[Working Title: Attack Landscape of Split Neural Networks](https://www.overleaf.com/project/5fe9a7e9dff0889b6fcb2714).
+Code for NOT YET PUBLISHED.
 
 ## Summary
 
@@ -38,28 +37,6 @@ While NoPeekNN does not provide any guarantees on data leakage,
 unlike differential privacy,
 we aim to demonstrate that it can provide some protection against
 a model inversion attack.
-
-### Roadmap
-
-- [x] Proof of concept: show that the attack can be protected against
-    - Eyeball data being protected (i.e. no formal evaluation of privacy)
-    - Brief analysis of privacy/accuracy trade-off
-- [ ] Improve models
-    - Current models have large accuracy/privacy trade-off. Tune NoPeek and DP-SplitNN to improve performance
-- [ ] Explore limits
-    - [ ] Impact of dataset size
-    - [ ] Impact of dataset distribution
-    - [ ] Impact of model size
-    - [ ] Impact of architecture
-- [x] Integrate NoPeekNN
-    - NoPeekNN cannot defend against the attack on its own,
-    but it has an effect similar to introducing more layers into the SplitNN
-    (recreations from the attack get worse)
-- [ ] Formalise
-    - [ ] Evaluate privacy parameters
-    - [ ] Assess distribution of intermediate data
-    - [X] Evaluate privacy by measuring raw data/recreated data similarity
-- [ ] Redo with CIFAR10
 
 ## Get started
 
