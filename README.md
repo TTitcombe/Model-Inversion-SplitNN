@@ -1,7 +1,7 @@
 # Defending SplitNN with Noise
 
 Applying noise to Split Neural networks.
-Code for NOT YET PUBLISHED.
+Code for Titcombe, T., Hall, A. J., Papadopoulos, P., & Romanini, D. (2021). Practical Defences Against Model Inversion Attacks for Split Neural Networks. arXiv preprint arXiv:2104.05743. ([link](https://arxiv.org/abs/2104.05743)
 
 ## Summary
 
@@ -157,6 +157,18 @@ please follow these conventions:
 - Add type hints
 - Add docstrings to functions and classes
 - Use `pytorch_lightning` to build PyTorch models
+
+## Publications
+Titcombe, T., Hall, A. J., Papadopoulos, P., & Romanini, D. (2021). Practical Defences Against Model Inversion Attacks for Split Neural Networks. arXiv preprint arXiv:2104.05743. ([link](https://arxiv.org/abs/2104.05743)
+
+You can cite this work using:
+
+    @article{titcombe2021practical,
+        title={Practical Defences Against Model Inversion Attacks for Split Neural Networks},
+        author={Titcombe, Tom and Hall, Adam J and Papadopoulos, Pavlos and Romanini, Daniele},
+        journal={arXiv preprint arXiv:2104.05743},
+        year={2021}
+    }
 
 ## License
 
