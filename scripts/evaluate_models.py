@@ -1,155 +1,84 @@
-"""
-Evaluate MNIST classifiers in terms of accuracy and
-Distance Correlation (input and intermediate tensor)
-"""
 import argparse
 import logging
-import os
 from pathlib import Path
-from typing import List, Tuple
-
 import numpy as np
 import pandas as pd
 import torch
-from pytorch_lightning import metrics
-
-from dpsnn import DistanceCorrelationLoss, SplitNN
+from torchmetrics import Accuracy
+import random
+from dpsnn import DistanceCorrelationLoss
 from dpsnn.utils import load_classifier
 
+def set_seed(seed_value=42):
+    random.seed(seed_value)
+    np.random.seed(seed_value)
+    torch.manual_seed(seed_value)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed_value)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
-def _evaluate_model_accuracy(model):
-    train_accuracy = metrics.Accuracy(compute_on_step=False)
-    valid_accuracy = metrics.Accuracy(compute_on_step=False)
-
-    for x, y in model.train_dataloader():
-        with torch.no_grad():
-            y_hat, _ = model(x)
-
-        train_accuracy(y_hat, y)
-
-    for x, y in model.val_dataloader():
-        with torch.no_grad():
-            y_hat, _ = model(x)
-
-        valid_accuracy(y_hat, y)
-
-    total_train_accuracy = train_accuracy.compute()
-    total_valid_accuracy = valid_accuracy.compute()
-
-    return total_train_accuracy.item() * 100, total_valid_accuracy.item() * 100
-
-
-def _evaluate_distance_correlation(model) -> Tuple[List, List]:
+def evaluate_model(model_path, seed):
+    set_seed(seed)
+    model = load_classifier(model_path)
+    accuracy = Accuracy(compute_on_step=False)
     distance_correlation = DistanceCorrelationLoss()
+    dcorr = []
 
-    dcorr_train = []
+    for dataloader in [model.val_dataloader()]:
+        for x, y in dataloader:
+            with torch.no_grad():
+                y_hat, intermediate = model(x)
+            accuracy(y_hat, y)
+            dcorr.append(distance_correlation(x, intermediate).item())
 
-    for x, _ in model.train_dataloader():
-        with torch.no_grad():
-            _, intermediate = model(x)
+    acc = accuracy.compute().item() * 100
+    dcorr_mean = round(np.mean(dcorr), 3)
+    dcorr_std = round(np.std(dcorr) / np.sqrt(len(dcorr)), 3)  # Corrected to not be a tuple
+    return acc, dcorr_mean, dcorr_std
 
-        dcorr_train.append(distance_correlation(x, intermediate))
+def _evaluate_models(models_path: Path, results_path: Path, evaluate_all: bool) -> None:
+    model_results = []
 
-    dcorr_valid = []
+    RANGE = 10  # Number of evaluations per model to calculate standard deviation
 
-    for x, _ in model.val_dataloader():
-        with torch.no_grad():
-            _, intermediate = model(x)
+    for model_path in models_path.glob("*.ckpt"):
+        accuracies = []
+        dcorrs = []
+        dcorr_stds = []
 
-        dcorr_valid.append(distance_correlation(x, intermediate))
+        for i in range(RANGE):
+            seed = 42 + i
+            logging.info(f"Evaluating {model_path.stem} with seed {seed} (iteration {i+1})")
+            acc, dcorr_mean, dcorr_std = evaluate_model(model_path, seed)
+            accuracies.append(acc)
+            dcorrs.append(dcorr_mean)
+            dcorr_stds.append(dcorr_std)
 
-    return (
-        round(np.mean(dcorr_train), 3),
-        round(np.std(dcorr_train) / np.sqrt(len(dcorr_train)), 3),
-        round(np.mean(dcorr_valid), 3),
-        round(np.std(dcorr_valid) / np.sqrt(len(dcorr_valid)), 3),
-    )
+        avg_acc = round(np.mean(accuracies), 3)
+        std_acc = round(np.std(accuracies), 3)
+        avg_dcorr = round(np.mean(dcorrs), 3)
+        avg_dcorr_std = round(np.mean(dcorr_stds), 3)  # Average of standard deviations
 
+        model_results.append((model_path.stem, avg_acc, std_acc, avg_dcorr, avg_dcorr_std))
 
-def _evaluate_models(models_path: Path, results_path: Path, args) -> None:
-    results = pd.DataFrame(
-        columns=[
-            "Model",
-            "MeanTrainAcc",
-            "SETrainAcc",
-            "MeanValAcc",
-            "SEValAcc",
-            "MeanTrainDCorr",
-            "SETrainDCorr",
-            "MeanValDCorr",
-            "SEValDCorr",
-        ]
-    )
-
-    results_file_path = results_path / "model_performances.csv"
-    if results_file_path.exists():
-        existing_models = pd.read_csv(results_file_path)["Model"].tolist()
-    else:
-        existing_models = []
-
-    try:
-        for model_path in models_path.glob("*.ckpt"):
-            if not args.evaluate_all and model_path.stem in existing_models:
-                logging.info(f"Skipping {model_path.stem} - Already evaluated")
-                continue
-
-            logging.info(f"Benchmarking {model_path.stem}")
-
-            model = load_classifier(model_path)
-
-            train_acc, val_acc = _evaluate_model_accuracy(model)
-            logging.info(
-                f"{model_path.stem} - Train acc: {train_acc:.3f}; Val acc: {val_acc:.3f}"
-            )
-
-            (
-                train_dcorr_mean,
-                train_dcorr_se,
-                val_dcorr_mean,
-                val_dcorr_se,
-            ) = _evaluate_distance_correlation(model)
-            logging.info(
-                f"{model_path.stem} - Train DCorr: {train_dcorr_mean} +/- {train_dcorr_se}; Val DCorr: {val_dcorr_mean} +/- {val_dcorr_se}"
-            )
-
-            model_results = {
-                "Model": model_path.stem,
-                "MeanTrainAcc": train_acc,
-                "SETrainAcc": None,
-                "MeanValAcc": val_acc,
-                "SEValAcc": None,
-                "MeanTrainDCorr": train_dcorr_mean,
-                "SETrainDCorr": train_dcorr_se,
-                "MeanValDCorr": val_dcorr_mean,
-                "SEValDCorr": val_dcorr_se,
-            }
-
-            results = results.append(model_results, ignore_index=True)
-    except KeyboardInterrupt:
-        pass
-
-    results.to_csv(results_file_path, index=False)
-
+    df_results = pd.DataFrame(model_results, columns=['Model', 'AverageAccuracy', 'StdAccuracy', 'AverageDistanceCorrelation', 'AvgStdDistanceCorrelation'])
+    df_sorted = df_results.sort_values(by='Model')
+    csv_file_path = results_path / "model_performances_averaged.csv"
+    df_sorted.to_csv(csv_file_path, index=False)
+    logging.info(f"Averaged results with standard deviations saved to {csv_file_path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Validate classifier characteristics")
-    parser.add_argument(
-        "--all",
-        dest="evaluate_all",
-        action="store_true",
-        help="Provide this flag to validate all models in 'classifiers' folder. Otherwise"
-        " only validate models not already in 'model_performances.csv' results file.",
-    )
-    parser.set_defaults(evaluate_all=False)
-
+    parser.add_argument("--all", dest="evaluate_all", action="store_true", help="Validate all models in 'classifiers' folder.")
     args = parser.parse_args()
 
-    logging.basicConfig(
-        format="%(asctime)s %(message)s", level=logging.INFO, datefmt="%I:%M:%S"
-    )
+    logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 
-    project_root = Path(__file__).parents[1]
+    project_root = Path(__file__).resolve().parents[1]
     models_path = project_root / "models" / "classifiers"
     results_path = project_root / "results" / "quantitative_measures"
+    if not results_path.exists():
+        results_path.mkdir(parents=True, exist_ok=True)
 
-    _evaluate_models(models_path, results_path, args)
+    _evaluate_models(models_path, results_path, args.evaluate_all)

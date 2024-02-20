@@ -1,8 +1,11 @@
 """Script for training a model with or without differential privacy"""
 import argparse
+import sys
 from pathlib import Path
 
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
+
 
 from dpsnn import SplitNN
 
@@ -16,30 +19,36 @@ def _get_model_savepath(root, args):
         + "_{epoch:02d}"
     )
 
-    savepath = root / "models" / "classifiers" / savename
+    savepath = root / "models" / "classifiers"
 
-    return savepath
+    return savepath, savename
 
 
 def main(root, args):
-    savepath = _get_model_savepath(root, args)
+    savepath, savename = _get_model_savepath(root, args)
+    print(f"Saving model to {savepath}")
     print(f"Saving model to {savepath}")
 
-    checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        filepath=savepath,
+
+    checkpoint_callback = ModelCheckpoint(
+        dirpath=savepath,
+        filename=savename,  # Filename format
         monitor="val_accuracy",
         mode="max",
+        save_last=False,
     )
 
     trainer = pl.Trainer(
         max_epochs=args.max_epochs,
         gpus=args.gpus,
-        checkpoint_callback=checkpoint_callback,
+        checkpoint_callback=[checkpoint_callback],
+        logger=False,
     )
     trainer.fit(model)
 
 
 if __name__ == "__main__":
+    
     parser = argparse.ArgumentParser(
         description="Train a SplitNN with differential privacy optionally applied to intermediate data"
     )
@@ -92,8 +101,9 @@ if __name__ == "__main__":
         action="store_true",
         dest="attack_val",
     )
-    parser.set_defaults(attack_val=False)
 
+    parser.set_defaults(attack_val=False)
+    print(sys.argv)
     args = parser.parse_args()
 
     # File paths

@@ -1,0 +1,13 @@
+Model,AverageAccuracy,StdAccuracy,AverageDistanceCorrelation,AvgStdDistanceCorrelation
+noise0.0_peek0.0,97.92,0.0,0.843,0.002
+noise0.0_peek0.2,97.74,0.0,0.529,0.003
+noise0.0_peek0.5,97.32,0.0,0.435,0.003
+noise0.1_peek0.0,97.94,0.039,0.842,0.002
+noise0.1_peek0.2,97.534,0.047,0.487,0.003
+noise0.1_peek0.5,97.292,0.037,0.432,0.003
+noise0.2_peek0.0,97.738,0.05,0.85,0.002
+noise0.2_peek0.2,97.398,0.086,0.499,0.004
+noise0.2_peek0.5,97.178,0.086,0.436,0.003
+noise0.5_peek0.0,97.668,0.076,0.843,0.002
+noise0.5_peek0.2,97.256,0.075,0.521,0.003
+noise0.5_peek0.5,97.25,0.094,0.458,0.003

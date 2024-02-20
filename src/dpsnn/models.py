@@ -11,12 +11,11 @@ from torchvision.datasets import MNIST
 
 from .nopeek_loss import NoPeekLoss
 
-
 class SplitNN(pl.LightningModule):
     def __init__(self, hparams) -> None:
-        super().__init__()
+        super(SplitNN, self).__init__()
+        self.save_hyperparameters(hparams)
 
-        self.hparams = hparams
 
         self.set_noise(self.hparams.noise_scale)
 
@@ -39,7 +38,13 @@ class SplitNN(pl.LightningModule):
         )
 
     def set_noise(self, noise: float) -> None:
-        self._noise = torch.distributions.Laplace(0.0, noise)
+        # self._noise = torch.distributions.Laplace(0.0, noise)
+        if noise > 0:
+            self._noise = torch.distributions.Laplace(0.0, noise)
+        else:
+            # Handle the case where noise_scale is 0.0
+            # You could set self._noise to None or use a very small noise scale
+            self._noise = torch.distributions.Laplace(0.0, 1e-5)
 
     def forward(self, x):
         intermediate = self.part1(x)
@@ -163,13 +168,13 @@ class SplitNN(pl.LightningModule):
         )
 
     def train_dataloader(self):
-        return DataLoader(self.train_data, batch_size=self.hparams.batch_size)
+        return DataLoader(self.train_data, batch_size=self.hparams.batch_size, num_workers=16)
 
     def val_dataloader(self):
-        return DataLoader(self.val_data, batch_size=self.hparams.batch_size)
+        return DataLoader(self.val_data, batch_size=self.hparams.batch_size, num_workers=16)
 
     def test_dataloader(self):
-        return DataLoader(self.test_data, batch_size=self.hparams.batch_size)
+        return DataLoader(self.test_data, batch_size=self.hparams.batch_size, num_workers=16)
 
 
 class ReLUSplitNN(SplitNN):
